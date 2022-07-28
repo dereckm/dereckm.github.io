@@ -1,26 +1,66 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { AppShell, Group, Header, Navbar, NavLink, Title } from '@mantine/core';
+import { IconBeach, IconHome2 } from '@tabler/icons';
+import Searchbar from './components/Searchbar';
+import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
+import actions from './data/actions.json'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import GuidGenerator from './pages/GuidGenerator';
+import Home from './pages/Home';
+
+
 
 function App() {
+  const actionGroups = Array.from(new Set<string>(actions.map(action => action.group)))
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleActionTrigger = (action: SpotlightAction) => navigate(`/${action.id}`)
+  const mappedActions: SpotlightAction[] = actions.map(action => ({
+    id: action.id,
+    title: action.title,
+    group: action.group,
+    onTrigger: handleActionTrigger
+  }))
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+      <SpotlightProvider 
+        shortcut={'mod + K'} 
+        actions={mappedActions}
+        transition='slide-down'
+        nothingFoundMessage='There is nothing here..'
+      >
+        <AppShell
+          navbar={
+          <Navbar width={{ base: 300 }} height={500} p='xs'>
+            <NavLink label="Home" onClick={() => navigate('/')} icon={<IconHome2 size={16} stroke={1.5} />} active={location.pathname === '/'} />
+            {actionGroups.map(group => (
+                <NavLink key={group} label={group} defaultOpened>
+                  {mappedActions.filter(action => action.group === group).map(action => (
+                    <NavLink key={action.id} label={action.title} onClick={() => handleActionTrigger(action)} active={location.pathname === `/${action.id}`} />
+                  ))}
+                </NavLink>
+              )
+            )}  
+          </Navbar>
+          }
+          header={
+            <Header height={60} p='xs'>
+              <Group position='apart'>
+                <Title order={1}><IconBeach size={32} stroke={1.5} />Sandbox</Title>
+                <Searchbar />
+              </Group>
+            </Header>
+          }
         >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+          <Routes>
+            <Route path='/' element={<Home />} />
+            <Route path='/guidgen' element={<GuidGenerator />} />
+          </Routes>
+        </AppShell>
+      </SpotlightProvider>
+  )
 }
 
 export default App;
