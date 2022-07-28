@@ -25,7 +25,7 @@ const useStyle = createStyles((theme) => ({
     }
 }))
 
-const Searchbar = function() {
+const Actionbar = function() {
     const spotlight = useSpotlight()
     const { classes } = useStyle()
     return (
@@ -41,4 +41,4 @@ const Searchbar = function() {
     )
 }
 
-export default Searchbar
+export default Actionbar

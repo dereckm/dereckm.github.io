@@ -1,1 +1,4 @@
-[{ "id": "guidgen", "title": "Guid generator", "group": "tool" }]
+[
+    { "id": "guidgen", "title": "Guid generator", "group": "Tool" },
+    { "id": "links", "title": "Links", "group": "Resources"}
+]

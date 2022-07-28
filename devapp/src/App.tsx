@@ -2,12 +2,13 @@ import React from 'react';
 import './App.css';
 import { AppShell, Group, Header, Navbar, NavLink, Title } from '@mantine/core';
 import { IconBeach, IconHome2 } from '@tabler/icons';
-import Searchbar from './components/Searchbar';
+import Actionbar from './components/Actionbar';
 import { SpotlightAction, SpotlightProvider } from '@mantine/spotlight';
 import actions from './data/actions.json'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import GuidGenerator from './pages/GuidGenerator';
 import Home from './pages/Home';
+import Links from './pages/Links';
 
 
 
@@ -49,7 +50,7 @@ function App() {
             <Header height={60} p='xs'>
               <Group position='apart'>
                 <Title order={1}><IconBeach size={32} stroke={1.5} />Sandbox</Title>
-                <Searchbar />
+                <Actionbar />
               </Group>
             </Header>
           }
@@ -57,6 +58,7 @@ function App() {
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/guidgen' element={<GuidGenerator />} />
+            <Route path='/links' element={<Links />} />
           </Routes>
         </AppShell>
       </SpotlightProvider>
