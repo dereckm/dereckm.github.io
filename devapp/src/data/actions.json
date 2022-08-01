@@ -1,4 +1,5 @@
 [
     { "id": "guidgen", "title": "Guid generator", "group": "Tool" },
-    { "id": "links", "title": "Links", "group": "Resources"}
+    { "id": "links", "title": "Links", "group": "Resources" },
+    { "id": "editor", "title": "Editor", "group": "Tool" }
 ]

@@ -9,6 +9,7 @@ import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import GuidGenerator from './pages/GuidGenerator';
 import Home from './pages/Home';
 import Links from './pages/Links';
+import CodeEditor from './pages/CodeEditor';
 
 
 
@@ -59,6 +60,7 @@ function App() {
             <Route path='/' element={<Home />} />
             <Route path='/guidgen' element={<GuidGenerator />} />
             <Route path='/links' element={<Links />} />
+            <Route path='/editor' element={<CodeEditor />} />
           </Routes>
         </AppShell>
       </SpotlightProvider>
