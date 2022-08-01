@@ -11,8 +11,6 @@ import Home from './pages/Home';
 import Links from './pages/Links';
 import CodeEditor from './pages/CodeEditor';
 
-
-
 function App() {
   const actionGroups = Array.from(new Set<string>(actions.map(action => action.group)))
   const location = useLocation()
