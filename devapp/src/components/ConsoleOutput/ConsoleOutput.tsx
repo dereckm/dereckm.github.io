@@ -1,4 +1,4 @@
-import { Affix, Card, createStyles, Divider, Group, Text } from '@mantine/core'
+import { Card, createStyles, Divider, Group, Text } from '@mantine/core'
 import { IconAlertTriangle, IconBug, IconChevronRight, IconInfoCircle, IconReportSearch } from '@tabler/icons'
 import React from 'react'
 
