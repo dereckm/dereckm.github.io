@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import PageHeader from '../components/PageHeader'
-import { createStyles, Space, Group, ActionIcon, Modal, TextInput, Stack, Button, Divider } from '@mantine/core'
-import { IconPlus } from '@tabler/icons'
+import { Space, Group, Button, Divider } from '@mantine/core'
 import Editor from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
 import { useListState } from '@mantine/hooks'
