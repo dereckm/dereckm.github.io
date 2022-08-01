@@ -7,14 +7,16 @@ const useStyle = createStyles((theme) => ({
         width: 'calc(100% - 300px)',
         height: '20%',
         minHeight: '20%',
-        overflowY: 'hidden',
-        borderTop: '1px solid #000',
-        borderLeft: '1px solid #000'
+        overflowY: 'scroll',
+        borderTop: '1px solid #888',
+        borderLeft: '1px solid #888',
+        position: 'fixed',
+        bottom: '0'
     },
     consoleOutput: {
         height: '100%',
-        overflow: 'scroll',
-        backgroundColor: theme.colors.gray[0]
+        overflowY: 'scroll',
+        overflowX: 'hidden'
     }
 }))
 
@@ -41,11 +43,11 @@ const ConsoleOutput = function (props: ConsoleOutputProps) {
     const { classes } = useStyle()
     return (
         <>
-            <Affix className={classes.consoleOutputContainer}>
+            <div className={classes.consoleOutputContainer}>
                 <Card shadow='md' withBorder className={classes.consoleOutput}>
                     {messages.map((message, i) => <span key={`console_message_${i}`}><ConsoleMessageComp {...message}></ConsoleMessageComp></span>)}
                 </Card>
-            </Affix>
+            </div>
         </>
     )
 }

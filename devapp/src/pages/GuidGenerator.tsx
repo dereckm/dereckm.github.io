@@ -43,13 +43,13 @@ const GuidGenerator = function() {
         guidsHandlers.setState(generatedGuids)
     }
 
-    const content = new Blob([guids.join(',\n') + '\n'], { type: 'text/csv' })
+    const getContent = () => new Blob([guids.join(',\n') + '\n'], { type: 'text/csv' })
     
     return (
         <>
             <PageHeader title='Guid generator' description='Use this tool to rapidly generate some guids or create and download a list.' />
             <Group position='right'>
-                <DownloadButton content={content} extension='csv' />
+                <DownloadButton getContent={getContent} extension='csv' />
             </Group>
             <Group position='apart' grow align={'flex-end'}>
                 <NumberInput 

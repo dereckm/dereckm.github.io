@@ -35,7 +35,7 @@ function App() {
       >
         <AppShell
           navbar={
-          <Navbar width={{ base: 300 }} height={500} p='xs'>
+          <Navbar width={{ base: 300 }} height={'100%'} p='xs'>
             <NavLink label="Home" onClick={() => navigate('/')} icon={<IconHome2 size={16} stroke={1.5} />} active={location.pathname === '/'} />
             {actionGroups.map(group => (
                 <NavLink key={group} label={group} defaultOpened>

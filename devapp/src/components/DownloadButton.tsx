@@ -5,21 +5,21 @@ import React, { useRef, useState } from 'react'
 const useStyle = createStyles(() => ({
     filetype: {
         marginLeft: '-16px',
-        width: '50px'
+        width: '60px'
     }
 }))
 
 interface DownloadButtonProps {
-    content: Blob
-    extension: 'csv'
+    extension: 'csv' | 'js' | 'json',
+    getContent: () => Blob
 }
 
 const DownloadButton = function (props: DownloadButtonProps) {
     const [showDownload, setShowDownload] = useState(false)
     return (
         <>
-            <Button onClick={() => setShowDownload(true)}>Download <IconDownload size={16}/></Button>
-            <DownloadWindow show={showDownload} onClose={() => setShowDownload(false)} content={props.content} extension={props.extension} />
+            <Button onClick={() => setShowDownload(true)}><IconDownload size={16}/></Button>
+            <DownloadWindow show={showDownload} onClose={() => setShowDownload(false)} getContent={props.getContent} extension={props.extension} />
         </>
     )
 }
@@ -27,14 +27,14 @@ const DownloadButton = function (props: DownloadButtonProps) {
 interface DownloadWindowProps {
     show: boolean
     onClose: () => void
-    content: Blob
-    extension: 'csv'
+    extension: 'csv' | 'js' | 'json',
+    getContent: () => Blob
 }
 
 const downloadFilenamePlaceholder = 'download'
 
 const DownloadWindow = function (props: DownloadWindowProps) {
-    const { show, onClose, content, extension } = props
+    const { show, onClose, getContent, extension } = props
     const [filename, setFilename] = useState('')
     const { classes } = useStyle()
     const downloadRef = useRef<HTMLAnchorElement>(null)
@@ -42,7 +42,7 @@ const DownloadWindow = function (props: DownloadWindowProps) {
     const handleConfirmDownload = () => {
         if (downloadRef.current) {
             const fileNameToUse = filename ? filename : downloadFilenamePlaceholder 
-            const url = window.URL.createObjectURL(content)
+            const url = window.URL.createObjectURL(getContent())
             downloadRef.current.href = url
             downloadRef.current.download = `${fileNameToUse}.${extension}`
             downloadRef.current.click()
@@ -66,7 +66,7 @@ const DownloadWindow = function (props: DownloadWindowProps) {
                     placeholder={downloadFilenamePlaceholder}
                     required 
                 />
-                <TextInput className={classes.filetype} disabled value='.csv' />
+                <TextInput className={classes.filetype} disabled value={`.${extension}`} />
             </Group>
             <Stack align='flex-end'>
                 <Button onClick={handleConfirmDownload}>Download</Button>
