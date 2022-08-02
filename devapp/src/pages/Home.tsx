@@ -1,10 +1,10 @@
 import React from 'react'
-import { Title } from '@mantine/core'
+import PageHeader from '../components/PageHeader'
 
 const Home = function () {
     return (
         <>
-            <Title order={2}>Welcome to this dev playground!</Title>
+            <PageHeader title='Welcome to this Dev Sandbox!' description='The purpose of this website is to make available the various tools used regularly during software development.' />
         </>
     )
 }

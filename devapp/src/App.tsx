@@ -10,6 +10,7 @@ import GuidGenerator from './pages/GuidGenerator';
 import Home from './pages/Home';
 import Links from './pages/Links';
 import CodeEditor from './pages/CodeEditor';
+import Colors from './pages/Colors';
 
 function App() {
   const actionGroups = Array.from(new Set<string>(actions.map(action => action.group)))
@@ -59,6 +60,7 @@ function App() {
             <Route path='/guidgen' element={<GuidGenerator />} />
             <Route path='/links' element={<Links />} />
             <Route path='/editor' element={<CodeEditor />} />
+            <Route path='/colors' element={<Colors />} />
           </Routes>
         </AppShell>
       </SpotlightProvider>
