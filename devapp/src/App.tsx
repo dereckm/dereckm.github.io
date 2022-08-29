@@ -11,9 +11,11 @@ import Home from './pages/Home';
 import Links from './pages/Links';
 import CodeEditor from './pages/CodeEditor';
 import Colors from './pages/Colors';
+import About from './pages/About';
 
 function App() {
-  const actionGroups = Array.from(new Set<string>(actions.map(action => action.group)))
+  const actionGroups = Array.from(new Set<string>(actions.filter(action => action.group !== '').map(action => action.group)))
+  const singleActions = Array.from(actions.filter(action => action.group === ''))
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -44,6 +46,9 @@ function App() {
                 </NavLink>
               )
             )}  
+            {singleActions.map(action => 
+              <NavLink key={action.id} label={action.title} onClick={() => navigate(`/${action.id}`)} active={location.pathname === `/${action.id}`} />
+            )}
           </Navbar>
           }
           header={
@@ -61,6 +66,7 @@ function App() {
             <Route path='/links' element={<Links />} />
             <Route path='/editor' element={<CodeEditor />} />
             <Route path='/colors' element={<Colors />} />
+            <Route path='/about' element={<About />} />
           </Routes>
         </AppShell>
       </SpotlightProvider>
