@@ -5,7 +5,7 @@ const Greeting = () => {
     <div className={styles['greeting-container']}>
         <div>
             <h2 className={styles['name']}>Dereck Melancon</h2>
-            <sub>B. Ing Software</sub>
+            <sub>Software Dev Team Lead, B. Eng</sub>
         </div>
     </div>
     )
