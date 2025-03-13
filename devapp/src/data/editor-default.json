@@ -1,3 +1,0 @@
-{
-    "content": "const printGreeting = function () { console.log('hello') }"
-}

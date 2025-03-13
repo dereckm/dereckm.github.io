@@ -1,0 +1,7 @@
+.menu-container {
+    background-color: #F5F5F5;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-evenly;
+}

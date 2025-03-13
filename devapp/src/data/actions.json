@@ -1,6 +1,0 @@
-[
-    { "id": "guidgen", "title": "Guid generator", "group": "Tool" },
-    { "id": "links", "title": "Links", "group": "Resources" },
-    { "id": "editor", "title": "Editor", "group": "Tool" },
-    { "id": "colors", "title": "Color utilities", "group": "Tool" }
-]
