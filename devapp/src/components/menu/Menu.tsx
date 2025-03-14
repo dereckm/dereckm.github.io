@@ -24,7 +24,6 @@ const Menu = ({ selectedMenuItem, setSelectedMenuItem }: MenuProps) => {
                 visibleEntries = visibleEntries.filter(v => v !== entry.target.id)
               }
             });
-            console.log(visibleEntries)
             if (visibleEntries.length > 0) {
                 setSelectedMenuItem(visibleEntries.sort((a, b) => {
                     const indexA = sections.indexOf(a);
