@@ -7,7 +7,6 @@ const MenuItem = ({icon, title, onClick, isSelected}: MenuItemProps) => {
     let menuItemClassesNames = styles['menu-item']
     if (isSelected) menuItemClassesNames += ` ${styles['selected']}`
 
-    console.log(isSelected)
     return (
         <div onClick={onClick} className={containerClassesNames}>
             <div className={menuItemClassesNames}>

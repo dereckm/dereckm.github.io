@@ -1,0 +1,44 @@
+.experience-title {
+    margin-bottom: 0;
+}
+
+.timeline-branch {
+    margin-left: 16px;
+    border-bottom: #FFF 4px solid;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.timeline-link {
+    width: 4px;
+    background-color: #FFF;
+    margin-left: 14px;
+}
+
+.timeline-element-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.experiences-container {
+    display: flex;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.timeline-container {
+    position: relative;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 32px;
+    &::before {
+        content: "";
+        position: absolute;
+        left: 46px; /* Align with dots */
+        width: 4px;
+        height: 100%;
+        background-color: #fff;
+    }
+}
+

@@ -3,5 +3,8 @@
     padding: 8px;
     border-radius: 8px;
     display: flex;
-    justify-content: space-evenly;
+    gap: 16px;
+    width: fit-content;
+    position: sticky;
+    top: 16px;
 }

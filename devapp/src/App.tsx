@@ -3,6 +3,8 @@ import styles from './App.module.css'
 
 import Menu from './components/menu/Menu';
 import AboutPage from './pages/AboutPage';
+import ResumePage from './pages/ResumePage';
+import ContactPage from './pages/ContactPage';
 
 
 function App() {
@@ -12,7 +14,11 @@ function App() {
     
     <div className={styles['App']}>
       <Menu selectedMenuItem={selectedMenuItem} setSelectedMenuItem={setSelectedMenuItem} />
-      {selectedMenuItem === 'about-me' && <AboutPage />}
+      <div className={styles['pages-container']}>
+        <AboutPage />
+        <ResumePage />
+        <ContactPage />
+      </div>
     </div>
       
   )
