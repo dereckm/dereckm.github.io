@@ -1,0 +1,54 @@
+.board {
+    height: 500px;
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.black {
+    color: #000
+}
+
+.white {
+    color: #FFF
+}
+
+.row {
+    display: flex;
+    flex-grow: 1;
+    flex-basis: 100%;
+}
+
+.square {
+    flex-grow: 1;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.square-black {
+    background-color: rgb(173, 41, 41);
+}
+
+.square-white {
+    background-color: rgb(237, 177, 97);
+}
+
+.candidate-move {
+    background-color: rgba(255, 136, 0, 0.632);
+    filter: drop-shadow(2px 4px 6px black);
+}
+
+.notation {
+    display: flex;
+}
+.notation-col {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.board-container {
+    display: flex;
+}

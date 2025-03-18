@@ -5,6 +5,7 @@ import Menu from './components/menu/Menu';
 import AboutPage from './pages/AboutPage';
 import ResumePage from './pages/ResumePage';
 import ContactPage from './pages/ContactPage';
+import ProjectsPage from './pages/ProjectsPage';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <AboutPage />
         <ResumePage />
         <ContactPage />
+        <ProjectsPage />
       </div>
     </div>
       

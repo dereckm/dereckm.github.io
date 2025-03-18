@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { ReactComponent as PersonIcon } from './person.svg'
 import { ReactComponent as ResumeIcon } from './resume.svg'
@@ -12,11 +12,11 @@ let visibleEntries: string[] = []
 const sections = ['about-me', 'resume', 'projects', 'contact'];
 
 const Menu = ({ selectedMenuItem, setSelectedMenuItem }: MenuProps) => {
-  
+    const [isScrolling, setIsScrolling] = useState(false)
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
-            const allVisible: string[] = []
+            if (isScrolling) return; // prevent switching during triggered scroll
             entries.forEach((entry) => {
               if (entry.isIntersecting) {
                 visibleEntries.push(entry.target.id)
@@ -43,9 +43,22 @@ const Menu = ({ selectedMenuItem, setSelectedMenuItem }: MenuProps) => {
     
         // Cleanup the observer on component unmount
         return () => observer.disconnect();
-      }, [setSelectedMenuItem]);
+      }, [setSelectedMenuItem, isScrolling]);
+
+      useEffect(() => {
+        let scrollTimeout: NodeJS.Timeout;
+        window.addEventListener('scroll', (e) => {
+          clearTimeout(scrollTimeout)
+          scrollTimeout = setTimeout(() => {
+            setIsScrolling(false)
+          }, 100)
+        })
+      }, [])
+
 
     const handleClick = (key: string) => () => {
+        setIsScrolling(true)
+        setSelectedMenuItem(key)
         const element = document.getElementById(key);
         if (element) {
             element.scrollIntoView({
@@ -53,7 +66,6 @@ const Menu = ({ selectedMenuItem, setSelectedMenuItem }: MenuProps) => {
                 block: 'start'
             })
         }
-        setSelectedMenuItem(key)
     }
     const check = (key: string) => selectedMenuItem === key
     return (
