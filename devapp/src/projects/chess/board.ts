@@ -67,7 +67,7 @@ export default class ChessBoard {
   _positionScore: Record<Color, number>
   _pieces: Record<Color, Int64>
 
-  static fromString(white: string, black: string) {
+  fromString(white: string, black: string) {
     const board = new ChessBoard()
     board.load(white, 'white')
     board.load(black, 'black')
@@ -84,6 +84,39 @@ export default class ChessBoard {
       }
     }
     return score
+  }
+
+  save() {
+    const view = this.toBoardView()
+    let text = ''
+    for(let i = 0; i < view.length; i++) {
+      text += view[i].map(sq => {
+        if (sq.piece == null) return '*'
+        if (sq.color === 'black') return sq.piece.toLowerCase()
+        return sq.piece
+      }).join('')
+    }
+    return text
+  }
+
+  loadAll(string: string) {
+    let white = ''
+    let black = ''
+    for(const c of string) {
+      if (c === '0') {
+        white += '0'
+        black += '0'
+      }
+      else if (c.toUpperCase() === c) {
+        white += c
+        black += '0'
+      } else {
+        white += '0'
+        black += c.toUpperCase()
+      }
+    }
+    this.load(white, 'white')
+    this.load(black, 'black')
   }
 
   load(string: string, color: Color) {
@@ -273,7 +306,6 @@ export default class ChessBoard {
       king,
       checkingMoves
     )
-
     let legalMoves = ZERO
     for(let moveIndex = 0; moveIndex < 64; moveIndex++) {
       const currentMove = this.getFlag(moveIndex)
@@ -304,12 +336,8 @@ export default class ChessBoard {
       checkingMoves: Record<Piece, Int64>) {
     this.applyMove(index, moveIndex)
     let legalMoves = ZERO
-    // Only need to re-compute moves that lead to king being checked when king moves
-    if (flag.equals(king)) {
-     const newKing =  this._bitboards[color]['K']
-     checkingMoves = this.getCheckingMoves(newKing, color)
-    }
-    
+    const newKing =  this._bitboards[color]['K']
+    checkingMoves = this.getCheckingMoves(newKing, color)
     const isCheck = this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) 
       || this.hasPiece(checkingMoves['N'], this._bitboards[oppositeColor]['N'])
       || this.hasPiece(checkingMoves['B'], this._bitboards[oppositeColor]['B'])

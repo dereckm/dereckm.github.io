@@ -16,6 +16,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 
 const engine = new Engine()
 const board = new ChessBoard()
+board.loadAll('rbn*knbrpp*ppppp**********p*********P****NqPN***P*P**PPPRB*QK*BR')
 
 
 const bind = () => {
@@ -53,6 +54,7 @@ export const Board = () => {
   }
 
   const handlePieceClick = (newIndex: number) => {
+    console.log(newIndex)
     if (index != null && moves.has(newIndex)) {
       setHistory([...history, board.toNotation(index, newIndex)])
       board.applyMove(index, newIndex)
@@ -95,6 +97,9 @@ export const Board = () => {
       </div>
       <div>
         <button onClick={() => botTurn(board._turn)}>Next</button>
+        <button onClick={() => {
+          navigator.clipboard.writeText(board.save())
+        }}>Copy</button>
       </div>
     </>
 
