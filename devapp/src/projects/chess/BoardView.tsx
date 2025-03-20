@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import styles from './BoardView.module.css'
-import ChessBoard, { Color, Piece, Square } from './board'
+import ChessBoard, { Color, MoveResult, Piece, PromotablePiece, Square } from './board'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
 
@@ -16,7 +16,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 
 const engine = new Engine()
 const board = new ChessBoard()
-board.loadAll('rbn*knbrpp*ppppp**********p*********P****NqPN***P*P**PPPRB*QK*BR')
+board.loadAll('*******p*P****************p*********P***********P*P*************')
 
 
 const bind = () => {
@@ -30,7 +30,9 @@ export const Board = () => {
   const [index, setIndex] = useState<number | null>(null)
   const [boardChanged, setBoardChanged] = useState<boolean>(false)
   const [history, setHistory] = useState<string[]>([])
-  const isBotEnabled = true
+  const [isPromoting, setIsPromoting] = useState<boolean>(false)
+  const [lastMoveResult, setLastMoveResult] = useState<MoveResult | null>(null)
+  const isBotEnabled = false
   const moves = useMemo(() => {
       if (boardChanged) {
         console.log('a')
@@ -54,10 +56,14 @@ export const Board = () => {
   }
 
   const handlePieceClick = (newIndex: number) => {
-    console.log(newIndex)
     if (index != null && moves.has(newIndex)) {
       setHistory([...history, board.toNotation(index, newIndex)])
-      board.applyMove(index, newIndex)
+      const moveResult = board.applyMove(index, newIndex)
+      setLastMoveResult(moveResult)
+      if (moveResult.isPromotion) {
+        setIsPromoting(true)
+        return
+      }
       setBoardChanged(prev => !prev)
       if (isBotEnabled) {
         botTurn(board._turn)
@@ -68,41 +74,57 @@ export const Board = () => {
     }
   }
 
+  const handlePromotion = (piece: PromotablePiece) => {
+    if (index != null && lastMoveResult != null) {
+      console.log(lastMoveResult)
+      board.applyPromotion(lastMoveResult.movedTo, piece)
+      board.print()
+      setIsPromoting(false)
+      setBoardChanged(prev => !prev)
+    }
+  }
+
   const view = board.toBoardView()
  
   return (
     <>
+      <div className={styles['chess-container']}>
       <div style={{display: 'flex', justifyContent: 'center'}}>
-        <div className={styles['board-container']}>
-          <div className={styles.board}>
-            {view.map((row, i) => <BoardRow key={i} row={row} i={i} moves={moves} onClick={handlePieceClick} />)}
-            <div className={styles['notation']}>
-              <span style={{ alignSelf: 'center', padding: '4px', visibility: 'hidden' }}>{'1'}</span>
-              {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(col => (<div className={styles['notation-col']} key={col}><span>{col}</span></div>))}
+        { isPromoting && (
+          <div className={styles['chess-promotion-modal']}>
+            <div onClick={() => handlePromotion('N')} className={styles['chess-promotion-choice']}><IconChessKnightFilled /></div>
+            <div onClick={() => handlePromotion('B')} className={styles['chess-promotion-choice']}><IconChessBishopFilled /></div>
+            <div onClick={() => handlePromotion('R')} className={styles['chess-promotion-choice']}><IconChessRookFilled /></div>
+            <div onClick={() => handlePromotion('Q')} className={styles['chess-promotion-choice']}><IconChessQueenFilled /></div>
+          </div>
+        )
+      }
+      { !isPromoting && (
+          <div className={styles['board-container']}>
+            <div className={styles.board}>
+              {view.map((row, i) => <BoardRow key={i} row={row} i={i} moves={moves} onClick={handlePieceClick} />)}
+              <div className={styles['notation']}>
+                <span style={{ alignSelf: 'center', padding: '4px', visibility: 'hidden' }}>{'1'}</span>
+                {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(col => (<div className={styles['notation-col']} key={col}><span>{col}</span></div>))}
+              </div>
             </div>
           </div>
-        </div>
-        <div 
-        style={{
-          padding: '32px',
-          backgroundColor: 'lightgrey',
-          overflowY: 'scroll',
-          font: 'menu',
-          fontSize: '1em',
-          fontWeight: '500',
-          maxHeight: '500px'
-        }}>
+        )
+      }
+        <div className={styles['move-history']}>
+          <div className={styles['move-history-content']}>
           {history.map((notation, i) => (<div key={`${notation}+${i}`}>{i}. {notation}</div>))}
+          </div>
         </div>
       </div>
-      <div>
-        <button onClick={() => botTurn(board._turn)}>Next</button>
-        <button onClick={() => {
-          navigator.clipboard.writeText(board.save())
-        }}>Copy</button>
+      <div className={styles['chessboard-controls']}>
+          <button className={styles['chessboard-control']} onClick={() => botTurn(board._turn)}>Next</button>
+          <button className={styles['chessboard-control']} onClick={() => {
+            navigator.clipboard.writeText(board.save())
+          }}>Copy</button>
+        </div>
       </div>
     </>
-
   )
 }
 

@@ -52,3 +52,51 @@
 .board-container {
     display: flex;
 }
+
+.move-history {
+    background-color: transparent;
+    overflow-y: scroll;
+    max-height: 500px;
+    min-width: 100px;
+    color: #667788;
+    font-weight: bold;
+}
+
+.move-history-content {
+    padding: 16px;
+}
+
+.chessboard-control {
+    color: #4A90E2;
+    border: none;
+    background-color: #F5F5F5;
+    font-weight: bold;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.chessboard-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.chess-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chess-promotion-modal {
+    display: flex;
+    justify-content: space-around;
+    width: 500px;
+    height: 500px;
+    align-items: center;
+
+}
+
+.chess-promotion-choice {
+    background-color: #F5F5F5;
+    padding: 16px;
+    border-radius: 8px;
+}

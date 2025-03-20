@@ -12,6 +12,9 @@ const WHITE_PAWN_START = Int64.fromString('0b1111111100000000')
 const BLACK_PAWN_START = Int64.fromString("0b0000000011111111000000000000000000000000000000000000000000000000")
 const EMPTY_ARRAY: number[] = []
 
+const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
+const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
+
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
 const positionWeights = 
@@ -387,26 +390,25 @@ export default class ChessBoard {
     console.log(text)
   }
 
-  applyMove(from: number, to: number): void {
+  applyMove(from: number, to: number): MoveResult {
     const whitePieces = this._pieces['white']
     const fromFlag = this.getFlag(from)
     const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
     const fromPiece = this.getPiece(fromFlag)
-    if (fromPiece == null) return
+    if (fromPiece == null) throw new Error('Cannot find the piece to move')
     const toFlag = this.getFlag(to)
-    const toColor: Color = this.hasPiece(whitePieces, toFlag) ? 'white' : 'black'
+    
     const toPiece = this.getPiece(toFlag)
+    let oppositeColorChanged = false
+    if (toPiece != null) {
+      this.capturePiece(toPiece, toFlag, to)
+      oppositeColorChanged = true
+    }
 
     // Clear from position
     this._bitboards[fromColor][fromPiece] =  this._bitboards[fromColor][fromPiece].xor(fromFlag)
     // Capture piece at to position (if any)
-    let oppositeColorChanged = false
-    if (toPiece != null) {
-      this._bitboards[toColor][toPiece] = this._bitboards[toColor][toPiece].xor(toFlag)
-      this._material[toColor][toPiece]--
-      this._positionScore[toColor] -= positionalHeuristics[to]
-      oppositeColorChanged = true
-    }
+    
       
     // Set board with new piece on to position
     this._bitboards[fromColor][fromPiece] = this._bitboards[fromColor][fromPiece].or(toFlag)
@@ -424,6 +426,38 @@ export default class ChessBoard {
     if (this.calculatePositionScore(fromColor) !== this._positionScore[fromColor]) {
       console.log(`scored shifted: real=${realScore}, tracked=${this._positionScore[fromColor]}`)
     }
+
+    return {
+      isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
+      movedTo: to
+    }
+  }
+
+  getColor(flag: Int64) {
+    return this.hasPiece(this._pieces['white'], flag) ? 'white' : 'black'
+  }
+
+  capturePiece(toPiece: Piece, toFlag: Int64, to: number) {
+    const toColor: Color = this.getColor(toFlag)
+    this._bitboards[toColor][toPiece] = this._bitboards[toColor][toPiece].xor(toFlag)
+    this._material[toColor][toPiece]--
+    this._positionScore[toColor] -= positionalHeuristics[to]
+  }
+
+  isPromotion(toFlag: Int64, fromColor: Color, fromPiece: Piece) {
+    if (fromPiece !== 'P') return false;
+    if (fromColor === 'white') return !toFlag.and(WHITE_PROMOTION_RANK).isZero()
+    return !toFlag.and(BLACK_PROMOTION_RANK).isZero()
+  }
+
+  applyPromotion(position: number, piece: PromotablePiece) {
+    const flag = this.getFlag(position)
+    const color: Color = this.getColor(flag)
+    console.log(flag)
+    console.log(color)
+    console.log(piece)
+    this._bitboards[color]['P'] = this._bitboards[color]['P'].xor(flag)
+    this._bitboards[color][piece] = this._bitboards[color][piece].or(flag)
   }
 
   undoMove() {
@@ -432,7 +466,7 @@ export default class ChessBoard {
     const fromFlag = this.getFlag(move.from)
     const toFlag = this.getFlag(move.to)
     const piece = this.getPiece(toFlag)
-    const color = this.hasPiece(this._pieces['white'], toFlag) ? 'white' : 'black'
+    const color = this.getColor(toFlag)
 
     if (piece == null) return
     this._bitboards[color][piece] = this._bitboards[color][piece].or(fromFlag) // place piece back to original position
@@ -549,7 +583,6 @@ export default class ChessBoard {
   checkPawnMoves(flag: Int64, color: Color) {
     let validMoves: Int64 = new Int64(0)
     // TODO : check en passant
-    // TODO : check edge of board (promotion)
     if (color === 'white') {
         const forwardOne = flag.shl(EIGHT)
         if (!this.hasPiece(this.getAllPieces(), forwardOne)) {
@@ -615,8 +648,13 @@ export default class ChessBoard {
   }
 }
 
-  export type Piece = 'P' | 'N' | 'B' | 'R' | 'Q' | 'K'
+  export type PromotablePiece = 'N' | 'B' | 'R' | 'Q'
+  export type Piece = 'P' | PromotablePiece | 'K'
   export type Color = 'black' | 'white'
+  export type MoveResult = {
+    isPromotion: boolean
+    movedTo: number
+  }
 
   export interface Square {
     piece: Piece | null

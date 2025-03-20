@@ -18,8 +18,8 @@ function App() {
       <div className={styles['pages-container']}>
         <AboutPage />
         <ResumePage />
-        <ContactPage />
         <ProjectsPage />
+        <ContactPage />
       </div>
     </div>
       
