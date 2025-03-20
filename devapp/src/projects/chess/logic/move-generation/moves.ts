@@ -89,10 +89,22 @@ function toIndex(x: number, y: number) {
     return y * 8 + (7 - x)
 }
 
-function toCoords(index: number) {
+export function toCoords(index: number) {
     const x = 7 - (index % 8)
     const y = Math.floor(index / 8)
     return { x, y }
+}
+
+export function getMoveIndexesFromFlag(flag: Int64) {
+    if (flag.isZero()) return []
+    if (flag.isFlag()) return [flag.log2()]
+    const indexes = []
+    for(let i = 0; i < 64; i++) {
+        if (!(flag.and(ONE.shl(i)).isZero())) {
+            indexes.push(i)
+        }
+    }
+    return indexes;
 }
 
 function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: Int64[], directions: ((i: number) => Int64)[]) {
@@ -125,7 +137,8 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
     const index = flag.log2()
     const moves = kingMoves[index]
     const stepOvers = board._pieces[color]
-    return moves.and(stepOvers.not())
+    const validMoves = moves.and(stepOvers.not())
+    return validMoves
   }
 
 
@@ -171,6 +184,7 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
     const stepOvers = board._pieces[color]
     return moves.and(stepOvers.not())
   }
+  
 
   export function checkPawnMoves(board: ChessBoard, flag: Int64, color: Color) {
     let validMoves: Int64 = new Int64(0)

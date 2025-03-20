@@ -1,7 +1,11 @@
 import Int64, { ZERO, ONE } from "../../logic/Int64"
 import { Color, Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
-import { checkPawnMoves, checkKnightMoves, checkBishopMoves, checkRookMoves, checkQueenMoves, checkKingMoves } from './logic/move-generation/moves'
+import { 
+  checkPawnMoves, checkKnightMoves, checkBishopMoves, 
+  checkRookMoves, checkQueenMoves, checkKingMoves, 
+  getMoveIndexesFromFlag, toCoords
+ } from './logic/move-generation/moves'
 
 const SEVEN = 7
 const NINE = 9
@@ -254,14 +258,13 @@ export default class ChessBoard {
    * @param color 
    * @returns lookup of positions that can cause check for each piece.
    */
-  getCheckingMoves(king: Int64, color: Color): Record<Piece, Int64> {
+  getCheckingMoves(king: Int64, index: number, color: Color): Record<Piece, Int64> {
     const bishopMoves = checkBishopMoves(this, king, color)
     const rookMoves = checkRookMoves(this, king, color)
     const kingMoves = checkKingMoves(this, king, color)
+    const pawnMoves = this.checkPawnCapturesForCheck(king, color)
     return {
-      'P': color === 'white' 
-        ? king.shl(SEVEN).or(king.shl(NINE)) 
-        : king.shr(SEVEN).or(king.shr(NINE)),
+      'P': pawnMoves,
       'N': checkKnightMoves(this, king, color),
       'B': bishopMoves,
       'R': rookMoves,
@@ -270,21 +273,36 @@ export default class ChessBoard {
     }
   }
 
+  checkPawnCapturesForCheck(king: Int64, color: Color) {
+    const index = king.log2()
+    const x = index % 8
+    const y = Math.floor(index / 8)
+    if (index === 24) {
+      console.log(x)
+    }
+    let moves = ZERO
+    if (color === 'white') {
+      if (x > 0 && y < 6) moves = moves.or(king.shl(SEVEN))
+      if (x < 7 && y < 6) moves = moves.or(king.shl(NINE))
+    } else {
+      if (x > 0 && y > 1) moves = moves.or(king.shr(NINE))
+      if (x < 7 && y > 1) moves = moves.or(king.shr(SEVEN))
+    }
+    return moves
+  }
+
   checkMovesForCheck(moves: Int64, color: Color, index: number) {
     if (moves.isZero()) return moves
 
     const oppositeColor = this.flipColor(color)
-    const flag = this.getFlag(index)
     const king = this._bitboards[color]['K']
-    let checkingMoves = this.getCheckingMoves(king, color)
+    let checkingMoves = this.getCheckingMoves(king, index, color)
     if (moves.isFlag()) return this.testMoveForCheck(
       index,
       moves.log2(),
       color,
       oppositeColor,
       moves,
-      flag,
-      king,
       checkingMoves
     )
     let legalMoves = ZERO
@@ -297,12 +315,11 @@ export default class ChessBoard {
           color,
           oppositeColor,
           currentMove,
-          flag,
-          king,
           checkingMoves
         ))
       }
     }
+    console.log(getMoveIndexesFromFlag(legalMoves))
     return legalMoves
   }
 
@@ -312,24 +329,26 @@ export default class ChessBoard {
       color: Color,
       oppositeColor: Color,
       currentMove: Int64,
-      flag: Int64,
-      king: Int64,
       checkingMoves: Record<Piece, Int64>) {
     this.applyMove(index, moveIndex)
-    let legalMoves = ZERO
     const newKing =  this._bitboards[color]['K']
-    checkingMoves = this.getCheckingMoves(newKing, color)
+    checkingMoves = this.getCheckingMoves(newKing, index, color)
     const isCheck = this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) 
       || this.hasPiece(checkingMoves['N'], this._bitboards[oppositeColor]['N'])
       || this.hasPiece(checkingMoves['B'], this._bitboards[oppositeColor]['B'])
       || this.hasPiece(checkingMoves['R'], this._bitboards[oppositeColor]['R'])
       || this.hasPiece(checkingMoves['Q'], this._bitboards[oppositeColor]['Q'])
       || this.hasPiece(checkingMoves['K'], this._bitboards[oppositeColor]['K'])
-    if (!isCheck) {
-      legalMoves = legalMoves.or(currentMove)
-    }
+
+      
+      if (moveIndex === 24) {
+
+        console.log(this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) )
+      }
+    
     this.undoMove()
-    return legalMoves
+    if (!isCheck) return currentMove
+    return ZERO
   }
 
   getMoveIndexes(index: number) {

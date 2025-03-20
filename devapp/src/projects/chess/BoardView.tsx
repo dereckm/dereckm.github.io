@@ -18,7 +18,8 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 
 const engine = new Engine()
 const board = new ChessBoard()
-board.loadAll('*******p*P*********K******p***k*****P***********P*P*************')
+board.loadAll('*******p*P**********K*****p***k*****P***********P*P*************')
+board._turn = 'black'
 
 
 const bind = () => {
