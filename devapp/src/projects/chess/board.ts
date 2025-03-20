@@ -277,9 +277,6 @@ export default class ChessBoard {
     const index = king.log2()
     const x = index % 8
     const y = Math.floor(index / 8)
-    if (index === 24) {
-      console.log(x)
-    }
     let moves = ZERO
     if (color === 'white') {
       if (x > 0 && y < 6) moves = moves.or(king.shl(SEVEN))
@@ -319,7 +316,6 @@ export default class ChessBoard {
         ))
       }
     }
-    console.log(getMoveIndexesFromFlag(legalMoves))
     return legalMoves
   }
 
@@ -340,12 +336,6 @@ export default class ChessBoard {
       || this.hasPiece(checkingMoves['Q'], this._bitboards[oppositeColor]['Q'])
       || this.hasPiece(checkingMoves['K'], this._bitboards[oppositeColor]['K'])
 
-      
-      if (moveIndex === 24) {
-
-        console.log(this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) )
-      }
-    
     this.undoMove()
     if (!isCheck) return currentMove
     return ZERO
@@ -451,9 +441,6 @@ export default class ChessBoard {
   applyPromotion(position: number, piece: PromotablePiece) {
     const flag = this.getFlag(position)
     const color: Color = this.getColor(flag)
-    console.log(flag)
-    console.log(color)
-    console.log(piece)
     this._bitboards[color]['P'] = this._bitboards[color]['P'].xor(flag)
     this._bitboards[color][piece] = this._bitboards[color][piece].or(flag)
   }
