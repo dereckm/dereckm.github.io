@@ -280,6 +280,7 @@ export default class ChessBoard {
   getCheckingMoves(king: Int64, color: Color): Record<Piece, Int64> {
     const bishopMoves = this.checkBishopMoves(king, color)
     const rookMoves = this.checkRookMoves(king, color)
+    const kingMoves = this.checkKingMoves(king, color)
     return {
       'P': color === 'white' 
         ? king.shl(SEVEN).or(king.shl(NINE)) 
@@ -288,7 +289,7 @@ export default class ChessBoard {
       'B': bishopMoves,
       'R': rookMoves,
       'Q': bishopMoves.or(rookMoves),
-      'K': ZERO
+      'K': kingMoves
     }
   }
 
@@ -346,6 +347,7 @@ export default class ChessBoard {
       || this.hasPiece(checkingMoves['B'], this._bitboards[oppositeColor]['B'])
       || this.hasPiece(checkingMoves['R'], this._bitboards[oppositeColor]['R'])
       || this.hasPiece(checkingMoves['Q'], this._bitboards[oppositeColor]['Q'])
+      || this.hasPiece(checkingMoves['K'], this._bitboards[oppositeColor]['K'])
     if (!isCheck) {
       legalMoves = legalMoves.or(currentMove)
     }
