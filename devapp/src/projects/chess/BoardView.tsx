@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import styles from './BoardView.module.css'
-import ChessBoard, { Color, MoveResult, Piece, PromotablePiece, Square } from './board'
+import ChessBoard, { MoveResult } from './board'
+import { Piece, PromotablePiece, Color } from './models/Piece'
+import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
 

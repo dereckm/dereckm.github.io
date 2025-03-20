@@ -111,3 +111,6 @@ export default class Int64 {
         }
     }
   }
+
+export const ZERO = new Int64(0)
+export const ONE = new Int64(1)

@@ -1,4 +1,5 @@
-import ChessBoard, { CandidateMove, Color } from "./board";
+import ChessBoard, { CandidateMove } from "./board";
+import { Color } from './models/Piece'
 
 const MAX_DEPTH = 10
 const TIMEOUT_MS = 500

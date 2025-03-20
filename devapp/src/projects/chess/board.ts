@@ -1,15 +1,11 @@
-import Int64 from "../../logic/Int64"
-import { kingMoves, knightMoves } from "./moves"
+import Int64, { ZERO, ONE } from "../../logic/Int64"
+import { Color, Piece, PromotablePiece } from './models/Piece'
+import { Square } from './models/Square'
+import { checkPawnMoves, checkKnightMoves, checkBishopMoves, checkRookMoves, checkQueenMoves, checkKingMoves } from './logic/move-generation/moves'
 
-export type Bitboard = bigint
-
-const ZERO = new Int64(0)
-const ONE = new Int64(1)
 const SEVEN = 7
-const EIGHT = 8
 const NINE = 9
-const WHITE_PAWN_START = Int64.fromString('0b1111111100000000')
-const BLACK_PAWN_START = Int64.fromString("0b0000000011111111000000000000000000000000000000000000000000000000")
+
 const EMPTY_ARRAY: number[] = []
 
 const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
@@ -39,25 +35,6 @@ export interface CandidateMove {
   from: number,
   to: number
 }
-
-const rookEdges = [
-  Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000"),
-  Int64.fromString("0b0000000100000001000000010000000100000001000000010000000100000001"),
-  Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111"),
-  Int64.fromString("0b1000000010000000100000001000000010000000100000001000000010000000"),
-]
-
-const bishopEdges = [
-  Int64.fromString("0b1111111110000000100000001000000010000000100000001000000010000000"),
-  Int64.fromString("0b1111111100000001000000010000000100000001000000010000000100000001"),
-  Int64.fromString("0b1000000010000000100000001000000010000000100000001000000011111111"),
-  Int64.fromString("0b0000000100000001000000010000000100000001000000010000000111111111"),
-]
-
-const queenEdges = [
-  ...rookEdges,
-  ...bishopEdges
-]
 
 export default class ChessBoard {
   _history: Move[] = []
@@ -223,10 +200,10 @@ export default class ChessBoard {
     const pawnAttacks: Int64 = color === 'white' 
       ? kingPos.shl(SEVEN).or(kingPos.shl(NINE)) 
       : kingPos.shr(SEVEN).or(kingPos.shr(NINE))
-    const bishopMoves = this.checkBishopMoves(kingPos, color)
-    const rookMoves = this.checkRookMoves(kingPos, color)
+    const bishopMoves = checkBishopMoves(this, kingPos, color)
+    const rookMoves = checkRookMoves(this, kingPos, color)
     return this.hasPiece(pawnAttacks, this._bitboards[oppositeColor]['P'])
-    || this.hasPiece(this.checkKnightMoves(kingPos, color), this._bitboards[oppositeColor]['N'])
+    || this.hasPiece(checkKnightMoves(this, kingPos, color), this._bitboards[oppositeColor]['N'])
     || this.hasPiece(bishopMoves, this._bitboards[oppositeColor]['B'])
     || this.hasPiece(rookMoves, this._bitboards[oppositeColor]['R'])
     || this.hasPiece(bishopMoves.or(rookMoves), this._bitboards[oppositeColor]['Q'])
@@ -261,12 +238,12 @@ export default class ChessBoard {
     const piece = this.getPiece(flag)
     if (!this.hasPiece(this._pieces[color], flag)) return ZERO
     let moves = ZERO
-    if (piece === 'P') moves = this.checkPawnMoves(flag, color)
-    else if (piece === 'N') moves =  this.checkKnightMoves(flag, color)
-    else if (piece === 'B') moves =  this.checkBishopMoves(flag, color)
-    else if (piece === 'R') moves =  this.checkRookMoves(flag, color)
-    else if (piece === 'Q') moves =  this.checkQueenMoves(flag, color)
-    else if (piece === 'K') moves = this.checkKingMoves(flag, color)
+    if (piece === 'P') moves = checkPawnMoves(this, flag, color)
+    else if (piece === 'N') moves =  checkKnightMoves(this, flag, color)
+    else if (piece === 'B') moves =  checkBishopMoves(this, flag, color)
+    else if (piece === 'R') moves =  checkRookMoves(this, flag, color)
+    else if (piece === 'Q') moves =  checkQueenMoves(this, flag, color)
+    else if (piece === 'K') moves = checkKingMoves(this, flag, color)
     moves = this.checkMovesForCheck(moves, color, index)
     return moves
   }
@@ -278,14 +255,14 @@ export default class ChessBoard {
    * @returns lookup of positions that can cause check for each piece.
    */
   getCheckingMoves(king: Int64, color: Color): Record<Piece, Int64> {
-    const bishopMoves = this.checkBishopMoves(king, color)
-    const rookMoves = this.checkRookMoves(king, color)
-    const kingMoves = this.checkKingMoves(king, color)
+    const bishopMoves = checkBishopMoves(this, king, color)
+    const rookMoves = checkRookMoves(this, king, color)
+    const kingMoves = checkKingMoves(this, king, color)
     return {
       'P': color === 'white' 
         ? king.shl(SEVEN).or(king.shl(NINE)) 
         : king.shr(SEVEN).or(king.shr(NINE)),
-      'N': this.checkKnightMoves(king, color),
+      'N': checkKnightMoves(this, king, color),
       'B': bishopMoves,
       'R': rookMoves,
       'Q': bishopMoves.or(rookMoves),
@@ -506,118 +483,6 @@ export default class ChessBoard {
     return null
   }
 
-  checkKingMoves(flag: Int64, color: Color) {
-    const index = flag.log2()
-    const moves = kingMoves[index]
-    const stepOvers = this._pieces[color]
-    return moves.and(stepOvers.not())
-  }
-
-  checkRangeMoves(flag: Int64, color: Color, edges: Int64[], directions: ((i: number) => Int64)[]) {
-    let moves = ZERO
-    const skips: boolean[] = []
-    skips.fill(false, 0, directions.length - 1)
-    const sameColorPieces = this._pieces[color]
-    const oppositeColor = this.flipColor(color)
-    const oppositePieces = this._pieces[oppositeColor]
-    for(let direction = 0; direction < directions.length; direction++) {
-      const edge = edges[direction]
-      if (this.hasPiece(edge, flag))
-        continue
-      for(let i = 1; i <= 7; i++) {
-        const pos = directions[direction](i)
-        if (this.hasPiece(sameColorPieces, pos)) {
-          break
-        }
-        if (this.hasPiece(edge, pos) || this.hasPiece(oppositePieces, pos)) {
-          moves = moves.or(pos)
-          break
-        }
-        moves = moves.or(pos)
-      }
-    }
-    return moves
-  }
-
-  checkQueenMoves(flag: Int64, color: Color) {
-    const directions = [
-      (i: number) => flag.shl(i * 8),
-      (i: number) => flag.shr(i * 1),
-      (i: number) => flag.shr(i * 8),
-      (i: number) => flag.shl(i * 1),
-      (i: number) => flag.shl(i * 9),
-      (i: number) => flag.shl(i * 7),
-      (i: number) => flag.shr(i * 7),
-      (i: number) => flag.shr(i * 9)
-     ]
-     return this.checkRangeMoves(flag, color, queenEdges, directions)
-  }
-
-  checkRookMoves(flag: Int64, color: Color) {
-    const directions = [
-      (i: number) => flag.shl(i * 8),
-      (i: number) => flag.shr(i * 1),
-      (i: number) => flag.shr(i * 8),
-      (i: number) => flag.shl(i * 1)
-     ]
-     return this.checkRangeMoves(flag, color, rookEdges, directions)
-  }
-
-  checkBishopMoves(flag: Int64, color: Color) {
-    const directions = [
-      (i: number) => flag.shl(i * 9),
-      (i: number) => flag.shl(i * 7),
-      (i: number) => flag.shr(i * 7),
-      (i: number) => flag.shr(i * 9)
-     ]
-
-     return this.checkRangeMoves(flag, color, bishopEdges, directions)
-  }
-
-  checkKnightMoves(flag: Int64, color: Color) {
-    if (flag.isZero()) return ZERO
-    const index = flag.log2()
-    const moves = knightMoves[index]
-    const stepOvers = this._pieces[color]
-    return moves.and(stepOvers.not())
-  }
-
-  checkPawnMoves(flag: Int64, color: Color) {
-    let validMoves: Int64 = new Int64(0)
-    // TODO : check en passant
-    if (color === 'white') {
-        const forwardOne = flag.shl(EIGHT)
-        if (!this.hasPiece(this.getAllPieces(), forwardOne)) {
-            validMoves = validMoves.or(forwardOne)
-            const forwardTwo = flag.shl(16)
-            if (this.hasPiece(WHITE_PAWN_START, flag) && !this.hasPiece(this.getAllPieces(), forwardTwo)) {
-                validMoves = validMoves.or(forwardTwo)
-            }
-        }
-        const blackPieces = this._pieces['black']
-        const diag1 = flag.shl(7)
-        const diag2 = flag.shl(9)
-        const captures = (diag1.or(diag2)).and(blackPieces)
-        validMoves = validMoves.or(captures)
-    } else if (color === 'black') {
-        const forwardOne = flag.shr(8)
-        if (!this.hasPiece(this.getAllPieces(), forwardOne)) {
-            validMoves = validMoves.or(forwardOne)
-            const forwardTwo = flag.shr(16)
-            if (this.hasPiece(BLACK_PAWN_START, flag) && !this.hasPiece(this.getAllPieces(), forwardTwo)) {
-                validMoves = validMoves.or(forwardTwo)
-            }
-        }
-        
-        const whitePieces = this._pieces['white']
-        const diag1 = flag.shr(7)
-        const diag2 = flag.shr(9)
-        const captures = (diag1.or(diag2)).and(whitePieces)
-        validMoves = validMoves.or(captures)
-    }
-    return validMoves
-  }
-
   hasPiece(bitboard: Int64, pos: Int64) {
     return !(bitboard.and(pos).isZero())
   }
@@ -650,16 +515,11 @@ export default class ChessBoard {
   }
 }
 
-  export type PromotablePiece = 'N' | 'B' | 'R' | 'Q'
-  export type Piece = 'P' | PromotablePiece | 'K'
-  export type Color = 'black' | 'white'
+
+
   export type MoveResult = {
     isPromotion: boolean
     movedTo: number
   }
 
-  export interface Square {
-    piece: Piece | null
-    color: Color
-    index: number
-  }
+ 
