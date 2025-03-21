@@ -3,8 +3,7 @@ import { Color, Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { 
   checkPawnMoves, checkKnightMoves, checkBishopMoves, 
-  checkRookMoves, checkQueenMoves, checkKingMoves, 
-  getMoveIndexesFromFlag, toCoords
+  checkRookMoves, checkQueenMoves, checkKingMoves
  } from './logic/move-generation/moves'
 
 const SEVEN = 7
@@ -17,18 +16,6 @@ const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
-const positionWeights = 
-"00000000" + 
-"01111110" + 
-"01222210" + 
-"01355310" + 
-"01355310" + 
-"01222210" + 
-"01111110" + 
-"00000000";
-
-const positionalHeuristics = positionWeights.split('').map(c => parseInt(c))
-
 interface Move {
   from: number
   to: number
@@ -37,37 +24,23 @@ interface Move {
 
 export interface CandidateMove {
   from: number,
-  to: number
+  to: number,
+  isCapture: boolean
 }
 
 export default class ChessBoard {
-  _history: Move[] = []
+  _history: string[] = []
 
   _turn: Color = 'white'
   _isCheck: boolean = false
 
   _bitboards: Record<Color, Record<Piece, Int64>>
-  _material: Record<Color, Record<Piece, number>>
-  _positionScore: Record<Color, number>
-  _pieces: Record<Color, Int64>
 
   fromString(white: string, black: string) {
     const board = new ChessBoard()
     board.load(white, 'white')
     board.load(black, 'black')
     return board
-  }
-
-  calculatePositionScore(color: Color) {
-    const pieces = this.getPieces(color)
-    let score = 0
-    for(let i = 0; i < 64; i++) {
-      const flag = this.getFlag(i)
-      if (this.hasPiece(pieces, flag)) {
-        score += positionalHeuristics[i]
-      }
-    }
-    return score
   }
 
   save() {
@@ -104,20 +77,12 @@ export default class ChessBoard {
   }
 
   load(string: string, color: Color) {
-    this._material[color]['P'] = 0
-    this._material[color]['N'] = 0
-    this._material[color]['B'] = 0
-    this._material[color]['R'] = 0
-    this._material[color]['Q'] = 0
-    this._material[color]['K'] = 0
     this._bitboards[color]['P'] = Int64.fromString(this.toBinaryString(string, 'P'))
     this._bitboards[color]['N'] = Int64.fromString(this.toBinaryString(string, 'N'))
     this._bitboards[color]['B'] = Int64.fromString(this.toBinaryString(string, 'B'))
     this._bitboards[color]['R'] = Int64.fromString(this.toBinaryString(string, 'R'))
     this._bitboards[color]['Q'] = Int64.fromString(this.toBinaryString(string, 'Q'))
     this._bitboards[color]['K'] = Int64.fromString(this.toBinaryString(string, 'K'))
-    this._pieces[color] = this.getPieces(color)
-    this._positionScore[color] = this.calculatePositionScore(color)
   }
 
   toBinaryString(input: string, char: string) {
@@ -133,62 +98,21 @@ export default class ChessBoard {
     this._bitboards = {
       white: {
         P: Int64.fromString("0b0000000000000000000000000000000000000000000000001111111100000000"),
-        N: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000100100"),
-        B: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000001000010"),
+        N: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000001000010"),
+        B: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000100100"),
         R: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000010000001"),
         Q: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000010000"),
         K: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000001000")
       },
       black: {
         P: Int64.fromString("0b0000000011111111000000000000000000000000000000000000000000000000"),
-        N: Int64.fromString("0b0010010000000000000000000000000000000000000000000000000000000000"),
-        B: Int64.fromString("0b0100001000000000000000000000000000000000000000000000000000000000"),
+        N: Int64.fromString("0b0100001000000000000000000000000000000000000000000000000000000000"),
+        B: Int64.fromString("0b0010010000000000000000000000000000000000000000000000000000000000"),
         R: Int64.fromString("0b1000000100000000000000000000000000000000000000000000000000000000"),
         Q: Int64.fromString("0b0001000000000000000000000000000000000000000000000000000000000000"),
         K: Int64.fromString("0b0000100000000000000000000000000000000000000000000000000000000000")
       }
     }
-
-    this._material = {
-      white: {
-        P: 8,
-        N: 2,
-        B: 2,
-        R: 2,
-        Q: 1,
-        K: 1
-      },
-      black: {
-        P: 8,
-        N: 2,
-        B: 2,
-        R: 2,
-        Q: 1,
-        K: 1
-      }
-    }
-
-    this._positionScore = {
-      white: 6,
-      black: 6
-    }
-    this._pieces = {
-      white: this.getPieces('white'),
-      black: this.getPieces('black')
-    }
-  }
-
-  getPieces(color: Color) {
-    return this._bitboards[color]['P']
-    .or(this._bitboards[color]['N'])
-    .or(this._bitboards[color]['B'])
-    .or(this._bitboards[color]['R'])
-    .or(this._bitboards[color]['Q'])
-    .or(this._bitboards[color]['K'])
-  }
-
-  getAllPieces() {
-    return this._pieces['white'].or(this._pieces['black']) 
   }
 
   getFlag(index: number) {
@@ -213,34 +137,52 @@ export default class ChessBoard {
     || this.hasPiece(bishopMoves.or(rookMoves), this._bitboards[oppositeColor]['Q'])
   }
 
+  getPiecesForColor(color: Color) {
+    return this._bitboards[color]['P']
+    .or(this._bitboards[color]['N'])
+    .or(this._bitboards[color]['B'])
+    .or(this._bitboards[color]['R'])
+    .or(this._bitboards[color]['Q'])
+    .or(this._bitboards[color]['K'])
+  }
+
+  getAllPieces() {
+    return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
+  }
+
   getAllLegalMoves(color: Color): CandidateMove[] {
-    const pieces = this._pieces[color]
-    const groupedLegalMoves: Record<Piece, CandidateMove[]> = { 'P': [], 'N': [], 'B': [], 'R': [], 'Q': [], 'K': [] }
+    const pieces = this.getPiecesForColor(color)
+    const oppositePieces = this.getPiecesForColor(this.flipColor(color))
+    const moves = []
     for(let i = 0; i < 64; i++) {
         const flag = this.getFlag(i)
         if (this.hasPiece(pieces, flag)) {
             const piece = this.getPiece(flag)
             if (piece != null) {
               const toIndexes = this.getMoveIndexes(i)
-              groupedLegalMoves[piece].push(...toIndexes.map(toIndex => ({ from: i, to: toIndex })))
+              for(const toIndex of toIndexes) {
+                const toFlag = this.getFlag(toIndex)
+                const isCapture = this.hasPiece(oppositePieces, toFlag)
+                moves.push({ from: i, to: toIndex, isCapture: isCapture })
+              }
             }
         }
     }
-    return [
-      ...groupedLegalMoves['Q'],
-      ...groupedLegalMoves['R'],
-      ...groupedLegalMoves['B'],
-      ...groupedLegalMoves['N'],
-      ...groupedLegalMoves['K'],
-      ...groupedLegalMoves['P'],
-    ]
+    return moves.toSorted((a, b) =>  {
+      if (a.isCapture && !b.isCapture) {
+        return 1
+      } else if (!a.isCapture && b.isCapture) {
+        return -1
+      }
+      return 0
+    })
   }
 
   checkMoves(index: number) {
     const flag = this.getFlag(index)
     const color = this._turn
     const piece = this.getPiece(flag)
-    if (!this.hasPiece(this._pieces[color], flag)) return ZERO
+    if (!this.hasPiece(this.getPiecesForColor(color), flag)) return ZERO
     let moves = ZERO
     if (piece === 'P') moves = checkPawnMoves(this, flag, color)
     else if (piece === 'N') moves =  checkKnightMoves(this, flag, color)
@@ -379,7 +321,7 @@ export default class ChessBoard {
   }
 
   applyMove(from: number, to: number): MoveResult {
-    const whitePieces = this._pieces['white']
+    const whitePieces = this.getPiecesForColor('white')
     const fromFlag = this.getFlag(from)
     const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
     const fromPiece = this.getPiece(fromFlag)
@@ -387,10 +329,8 @@ export default class ChessBoard {
     const toFlag = this.getFlag(to)
     
     const toPiece = this.getPiece(toFlag)
-    let oppositeColorChanged = false
     if (toPiece != null) {
       this.capturePiece(toPiece, toFlag, to)
-      oppositeColorChanged = true
     }
 
     // Clear from position
@@ -402,34 +342,37 @@ export default class ChessBoard {
     this._bitboards[fromColor][fromPiece] = this._bitboards[fromColor][fromPiece].or(toFlag)
     this._turn = this.flipColor(this._turn)
 
-    this._history.push({ from: from, to: to, capture: toPiece })
-    this._positionScore[fromColor] += (positionalHeuristics[to] - positionalHeuristics[from])
-    this._pieces[fromColor] = this.getPieces(fromColor)
-    if (oppositeColorChanged) {
-      const oppositeColor = this.flipColor(fromColor)
-      this._pieces[oppositeColor] = this.getPieces(oppositeColor)
-    }
+    this._history.push(this.save())
     
-    const realScore = this.calculatePositionScore(fromColor)
-    if (this.calculatePositionScore(fromColor) !== this._positionScore[fromColor]) {
-      console.log(`scored shifted: real=${realScore}, tracked=${this._positionScore[fromColor]}`)
-    }
+    
+    
+    const oppositeColor = this.flipColor(fromColor)
+    const oppositeKing = this._bitboards[oppositeColor]['K']
+    const isCheck = this.isCheck(oppositeKing, oppositeColor)
+
+    // let isCheckmate = false
+    // if (isCheck) {
+    //   const legalMoves = this.getAllLegalMoves(oppositeColor)
+    //   if (legalMoves.length === 0) {
+    //     isCheckmate = true
+    //   }
+    // }
 
     return {
       isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
-      movedTo: to
+      movedTo: to,
+      isCheck: isCheck,
+      isCheckmate: false
     }
   }
 
   getColor(flag: Int64) {
-    return this.hasPiece(this._pieces['white'], flag) ? 'white' : 'black'
+    return this.hasPiece(this.getPiecesForColor('white'), flag) ? 'white' : 'black'
   }
 
   capturePiece(toPiece: Piece, toFlag: Int64, to: number) {
     const toColor: Color = this.getColor(toFlag)
     this._bitboards[toColor][toPiece] = this._bitboards[toColor][toPiece].xor(toFlag)
-    this._material[toColor][toPiece]--
-    this._positionScore[toColor] -= positionalHeuristics[to]
   }
 
   isPromotion(toFlag: Int64, fromColor: Color, fromPiece: Piece) {
@@ -446,33 +389,11 @@ export default class ChessBoard {
   }
 
   undoMove() {
-    const move = this._history.pop()
-    if (move == null) return
-    const fromFlag = this.getFlag(move.from)
-    const toFlag = this.getFlag(move.to)
-    const piece = this.getPiece(toFlag)
-    const color = this.getColor(toFlag)
-
-    if (piece == null) return
-    this._bitboards[color][piece] = this._bitboards[color][piece].or(fromFlag) // place piece back to original position
-    this._bitboards[color][piece] = this._bitboards[color][piece].xor(toFlag) // remove piece from current position
-
-    const oppositeColor = this.flipColor(color)
-    let oppositeColorChanged = false
-    if (move.capture != null) {
-      this._bitboards[oppositeColor][move.capture] = this._bitboards[oppositeColor][move.capture].or(toFlag) // place back captured piece
-      this._material[oppositeColor][move.capture]++ // reset material counter
-      this._positionScore[oppositeColor] += positionalHeuristics[move.to]
-      oppositeColorChanged = true
+    const lastState = this._history.pop()
+    if (lastState) {
+      this.loadAll(lastState)
+      this._turn = this.flipColor(this._turn)
     }
-    this._positionScore[color] -= (positionalHeuristics[move.to] - positionalHeuristics[move.from])
-    this._turn = this.flipColor(this._turn) // reset turn
-
-    this._pieces[color] = this.getPieces(color)
-    if (oppositeColorChanged) {
-      this._pieces[oppositeColor] = this.getPieces(oppositeColor)
-    }
-    
   }
 
   flipColor(color: Color) {
@@ -512,7 +433,7 @@ export default class ChessBoard {
         const index = this.getIndex(i, j)
         const flag = this.getFlag(index)
         const piece = this.getPiece(flag)
-        const color = this.hasPiece(this._pieces['white'], flag) ? 'white' : 'black'
+        const color = this.hasPiece(this.getPiecesForColor('white'), flag) ? 'white' : 'black'
         row.push({ piece, color, index })
       }
       boardView.push(row)
@@ -526,6 +447,8 @@ export default class ChessBoard {
   export type MoveResult = {
     isPromotion: boolean
     movedTo: number
+    isCheck: boolean
+    isCheckmate: boolean
   }
 
  

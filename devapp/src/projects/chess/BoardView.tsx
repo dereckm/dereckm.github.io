@@ -5,7 +5,9 @@ import { Piece, PromotablePiece, Color } from './models/Piece'
 import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
+import { calculateScoreDelta } from './logic/scoring-heuristics/scoring'
 
+const checkSound = new Audio('move-check.mp3')
 
 const iconsLookup: Record<Piece, JSX.Element> = {
   'P': <IconChessFilled scale='10x' />,
@@ -17,32 +19,15 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 }
 
 const engine = new Engine()
-const board = new ChessBoard()
-// board.loadAll('*******p*P**********K*****p***k*****P***********P*P*************')
-// board._turn = 'black'
-
-
-const bind = () => {
-  const theWindow = (window as unknown as any)
-  theWindow.engine = engine
-  theWindow.board = board
-}
-bind()
 
 export const Board = () => {
+  const [boardState, setBoardState] = useState<string>('**b******p**k**rr**qp**np*pP*p*NP**B*******PR*PB***KP**P*N****QR')
+  
   const [index, setIndex] = useState<number | null>(null)
-  const [boardChanged, setBoardChanged] = useState<boolean>(false)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
   const [lastMoveResult, setLastMoveResult] = useState<MoveResult | null>(null)
   const isBotEnabled = false
-  const moves = useMemo(() => {
-      if (boardChanged) {
-        console.log('a')
-      }
-      if (index === null) return new Set<number>([])
-      return new Set<number>(board.getMoveIndexes(index))
-    }, [index, boardChanged])
 
   const botTurn = (color: Color) => {
     const engineMove = engine.findDeepeningOptimalMove(board, color, 500)
@@ -54,28 +39,24 @@ export const Board = () => {
     const to = engineMove.move.to
     const newMove = board.toNotation(from, to)
     setHistory(prev => [...prev, newMove])
-    board.applyMove(engineMove.move.from, engineMove.move.to)
-    setBoardChanged(prev => !prev)
+    // board.applyMove(from, to)
+    console.log(calculateScoreDelta(board))
   }
 
   const handlePieceClick = (newIndex: number) => {
-    if (index != null && moves.has(newIndex)) {
-      setHistory([...history, board.toNotation(index, newIndex)])
-      const moveResult = board.applyMove(index, newIndex)
-      setLastMoveResult(moveResult)
-      if (moveResult.isPromotion) {
-        setIsPromoting(true)
-        return
-      }
-      setBoardChanged(prev => !prev)
-      if (isBotEnabled) {
-        botTurn(board._turn)
-      }
-      setIndex(null)
-    } else {
-      setIndex(newIndex)
-    }
+    setIndex(newIndex)
   }
+
+  const board = useMemo(() => {
+    const chessboard = new ChessBoard()
+    chessboard.loadAll(boardState)
+    return chessboard
+  }, [boardState])
+
+  const possibleMoves = useMemo(() => {
+    const moves = index != null ? board.getMoveIndexes(index) : []
+    return new Set<number>(moves)
+  }, [board, index])
 
   const handlePromotion = (piece: PromotablePiece) => {
     if (index != null && lastMoveResult != null) {
@@ -83,8 +64,11 @@ export const Board = () => {
       board.applyPromotion(lastMoveResult.movedTo, piece)
       board.print()
       setIsPromoting(false)
-      setBoardChanged(prev => !prev)
     }
+  }
+
+  const handlePreviousClick = () => {
+    board.undoMove()
   }
 
   const view = board.toBoardView()
@@ -105,7 +89,7 @@ export const Board = () => {
       { !isPromoting && (
           <div className={styles['board-container']}>
             <div className={styles.board}>
-              {view.map((row, i) => <BoardRow key={i} row={row} i={i} moves={moves} onClick={handlePieceClick} />)}
+              {view.map((row, i) => <BoardRow key={i} row={row} i={i} moves={possibleMoves} onClick={handlePieceClick} />)}
               <div className={styles['notation']}>
                 <span style={{ alignSelf: 'center', padding: '4px', visibility: 'hidden' }}>{'1'}</span>
                 {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(col => (<div className={styles['notation-col']} key={col}><span>{col}</span></div>))}
@@ -121,6 +105,7 @@ export const Board = () => {
         </div>
       </div>
       <div className={styles['chessboard-controls']}>
+          <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Previous</button>
           <button className={styles['chessboard-control']} onClick={() => botTurn(board._turn)}>Next</button>
           <button className={styles['chessboard-control']} onClick={() => {
             navigator.clipboard.writeText(board.save())

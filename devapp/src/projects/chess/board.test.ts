@@ -1,3 +1,4 @@
+import { setuid } from 'process'
 import ChessBoard from './board'
 
 test('should allow blocking check with knight', () => {
@@ -23,9 +24,18 @@ test('king moves should generate correctly', () => {
     board._turn = 'black'
     const moves = board.getMoveIndexes(33)
     console.log(moves)
-    expect(6).toBe(moves.length)
+    expect(moves.length).toBe(6)
     expect(moves).toContain(24)
 })
+
+
+test('pawns should not capture via going out of bounds', () => {
+    const board = setUp('rnbqkb*rpppppppp*****n**P************************PPPPPPPRNBQKBNR')
+    board._turn = 'black'
+    const moves = board.getMoveIndexes(48)
+    expect(moves.length).toBe(2)
+})
+
 
 function setUp(boardString: string) {
     const board = new ChessBoard()

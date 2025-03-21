@@ -111,9 +111,9 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
     let moves = ZERO
     const skips: boolean[] = []
     skips.fill(false, 0, directions.length - 1)
-    const sameColorPieces = board._pieces[color]
+    const sameColorPieces = board.getPiecesForColor(color)
     const oppositeColor = board.flipColor(color)
-    const oppositePieces = board._pieces[oppositeColor]
+    const oppositePieces = board.getPiecesForColor(oppositeColor)
     for(let direction = 0; direction < directions.length; direction++) {
         const edge = edges[direction]
         if (board.hasPiece(edge, flag))
@@ -134,9 +134,10 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
 }
 
 export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
+    // TODO : Castling
     const index = flag.log2()
     const moves = kingMoves[index]
-    const stepOvers = board._pieces[color]
+    const stepOvers = board.getPiecesForColor(color)
     const validMoves = moves.and(stepOvers.not())
     return validMoves
   }
@@ -181,7 +182,7 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
     if (flag.isZero()) return ZERO
     const index = flag.log2()
     const moves = knightMoves[index]
-    const stepOvers = board._pieces[color]
+    const stepOvers = board.getPiecesForColor(color)
     return moves.and(stepOvers.not())
   }
   
@@ -198,10 +199,13 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
                 validMoves = validMoves.or(forwardTwo)
             }
         }
-        const blackPieces = board._pieces['black']
-        const diag1 = flag.shl(7)
-        const diag2 = flag.shl(9)
-        const captures = (diag1.or(diag2)).and(blackPieces)
+        const blackPieces = board.getPiecesForColor('black')
+        let possibleCaptures = ZERO
+        const index = flag.log2()
+        const x = index % 8
+        if (x > 0) possibleCaptures = possibleCaptures.or(flag.shl(7))
+        if (x < 7) possibleCaptures = possibleCaptures.or(flag.shl(9))
+        const captures = possibleCaptures.and(blackPieces)
         validMoves = validMoves.or(captures)
     } else if (color === 'black') {
         const forwardOne = flag.shr(8)
@@ -213,10 +217,13 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
             }
         }
         
-        const whitePieces = board._pieces['white']
-        const diag1 = flag.shr(7)
-        const diag2 = flag.shr(9)
-        const captures = (diag1.or(diag2)).and(whitePieces)
+        const whitePieces = board.getPiecesForColor('white')
+        let possibleCaptures = ZERO
+        const index = flag.log2()
+        const x = index % 8
+        if (x < 7) possibleCaptures = possibleCaptures.or(flag.shr(7))
+        if (x > 0) possibleCaptures = possibleCaptures.or(flag.shr(9))
+        const captures = possibleCaptures.and(whitePieces)
         validMoves = validMoves.or(captures)
     }
     return validMoves
