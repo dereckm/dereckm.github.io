@@ -18,6 +18,7 @@ export default class Engine {
     _exploredPaths = 0
     _prunedNodes = 0
     _cancellation = 0
+    _timeoutMs = 0
     _isCancelled() {
       return Date.now() > this._cancellation
     }
@@ -34,6 +35,7 @@ export default class Engine {
       let depth = 1;
       this._exploredPaths = 0;
       this._prunedNodes = 0;
+      this._timeoutMs = timeoutMs;
       while (Date.now() - this._timer < timeoutMs) {
           let legalMoves = board.getAllLegalMoves(color);
           let alpha = -Infinity;
@@ -51,7 +53,7 @@ export default class Engine {
           }
           depth++; // Increase depth for the next iteration
       }
-      this.printMetrics(depth, 0)
+      this.printMetrics(depth, calculateScoreDelta(board))
       return { move: bestMove, score: 0 };
   }
 
@@ -67,7 +69,7 @@ export default class Engine {
 
     minimax(board: ChessBoard, color: Color, depth: number, alpha: number, beta: number): number {
       this._exploredPaths++;
-      if (depth === 0) {
+      if (depth === 0 || Date.now() - this._timer > this._timeoutMs) {
           return calculateScoreDelta(board);
       }
   

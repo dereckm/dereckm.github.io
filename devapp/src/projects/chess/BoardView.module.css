@@ -75,6 +75,15 @@
     border-radius: 8px;
 }
 
+.chessboard-control-active {
+    border: 1px solid #F5F5F5;
+    font-weight: bold;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: #1B1F3B;
+    color: #FFF;
+}
+
 .chessboard-controls {
     display: flex;
     gap: 8px;
@@ -100,3 +109,4 @@
     padding: 16px;
     border-radius: 8px;
 }
+

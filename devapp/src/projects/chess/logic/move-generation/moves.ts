@@ -109,25 +109,24 @@ export function getMoveIndexesFromFlag(flag: Int64) {
 
 function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: Int64[], directions: ((i: number) => Int64)[]) {
     let moves = ZERO
-    const skips: boolean[] = []
-    skips.fill(false, 0, directions.length - 1)
     const sameColorPieces = board.getPiecesForColor(color)
     const oppositeColor = board.flipColor(color)
     const oppositePieces = board.getPiecesForColor(oppositeColor)
     for(let direction = 0; direction < directions.length; direction++) {
         const edge = edges[direction]
-        if (board.hasPiece(edge, flag))
-        continue
+        if (board.hasPiece(edge, flag)) // we're already at the edge
+            continue
+        
         for(let i = 1; i <= 7; i++) {
-        const pos = directions[direction](i)
-        if (board.hasPiece(sameColorPieces, pos)) {
-            break
-        }
-        if (board.hasPiece(edge, pos) || board.hasPiece(oppositePieces, pos)) {
+            const pos = directions[direction](i)
+            
+            if (board.hasPiece(sameColorPieces, pos)) {
+                break
+            }
             moves = moves.or(pos)
-            break
-        }
-        moves = moves.or(pos)
+            if (board.hasPiece(edge, pos) || board.hasPiece(oppositePieces, pos)) {
+                break
+            }
         }
     }
     return moves

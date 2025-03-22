@@ -9,18 +9,10 @@ import {
 const SEVEN = 7
 const NINE = 9
 
-const EMPTY_ARRAY: number[] = []
-
 const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
 const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-
-interface Move {
-  from: number
-  to: number
-  capture: Piece | null
-}
 
 export interface CandidateMove {
   from: number,
@@ -31,16 +23,15 @@ export interface CandidateMove {
 export default class ChessBoard {
   _history: string[] = []
 
-  _turn: Color = 'white'
+  _turn: Color;
   _isCheck: boolean = false
 
   _bitboards: Record<Color, Record<Piece, Int64>>
 
-  fromString(white: string, black: string) {
-    const board = new ChessBoard()
-    board.load(white, 'white')
-    board.load(black, 'black')
-    return board
+  constructor(state: string) {
+    this._bitboards = {} as Record<Color, Record<Piece, Int64>>
+    this._turn = 'white'
+    this.loadAll(state)
   }
 
   save() {
@@ -53,13 +44,16 @@ export default class ChessBoard {
         return sq.piece
       }).join('')
     }
+    text += this._turn === 'white' ? '1' : '0'
     return text
   }
 
-  loadAll(string: string) {
+  loadAll(state: string) {
     let white = ''
     let black = ''
-    for(const c of string) {
+    this._turn = state[64] === '1' ? 'white' : 'black'
+    for(let i = 0; i < 64; i++) {
+      const c = state[i]
       if (c === '0') {
         white += '0'
         black += '0'
@@ -77,6 +71,7 @@ export default class ChessBoard {
   }
 
   load(string: string, color: Color) {
+    this._bitboards[color] = {} as Record<Piece, Int64>
     this._bitboards[color]['P'] = Int64.fromString(this.toBinaryString(string, 'P'))
     this._bitboards[color]['N'] = Int64.fromString(this.toBinaryString(string, 'N'))
     this._bitboards[color]['B'] = Int64.fromString(this.toBinaryString(string, 'B'))
@@ -92,29 +87,7 @@ export default class ChessBoard {
     }
     return binaryString
   }
-
-  constructor () {
-
-    this._bitboards = {
-      white: {
-        P: Int64.fromString("0b0000000000000000000000000000000000000000000000001111111100000000"),
-        N: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000001000010"),
-        B: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000100100"),
-        R: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000010000001"),
-        Q: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000010000"),
-        K: Int64.fromString("0b0000000000000000000000000000000000000000000000000000000000001000")
-      },
-      black: {
-        P: Int64.fromString("0b0000000011111111000000000000000000000000000000000000000000000000"),
-        N: Int64.fromString("0b0100001000000000000000000000000000000000000000000000000000000000"),
-        B: Int64.fromString("0b0010010000000000000000000000000000000000000000000000000000000000"),
-        R: Int64.fromString("0b1000000100000000000000000000000000000000000000000000000000000000"),
-        Q: Int64.fromString("0b0001000000000000000000000000000000000000000000000000000000000000"),
-        K: Int64.fromString("0b0000100000000000000000000000000000000000000000000000000000000000")
-      }
-    }
-  }
-
+  
   getFlag(index: number) {
     return ONE.shl(index)
   }
@@ -269,6 +242,7 @@ export default class ChessBoard {
       currentMove: Int64,
       checkingMoves: Record<Piece, Int64>) {
     this.applyMove(index, moveIndex)
+
     const newKing =  this._bitboards[color]['K']
     checkingMoves = this.getCheckingMoves(newKing, index, color)
     const isCheck = this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) 
@@ -279,21 +253,21 @@ export default class ChessBoard {
       || this.hasPiece(checkingMoves['K'], this._bitboards[oppositeColor]['K'])
 
     this.undoMove()
+
     if (!isCheck) return currentMove
     return ZERO
   }
 
   getMoveIndexes(index: number) {
-    const moveFlag = this.checkMoves(index)
-    if (moveFlag.isZero()) return EMPTY_ARRAY
-    if (moveFlag.isFlag()) return [moveFlag.log2()]
-    let indexes = []
-    for(let i = 0; i < 64; i++) {
-        if (!(moveFlag.and(ONE.shl(i)).isZero())) {
-          indexes.push(i)
-        }
+    const moves = this.checkMoves(index)
+    const indexes = []
+    for (let i = 0; i < 64; i++) {
+      const toFlag = this.getFlag(i)
+      if (this.hasPiece(moves, toFlag)) {
+        indexes.push(i)
+      }
     }
-    return indexes;
+    return indexes
   }
 
   print() {
@@ -321,6 +295,9 @@ export default class ChessBoard {
   }
 
   applyMove(from: number, to: number): MoveResult {
+
+    this._history.push(this.save())
+
     const whitePieces = this.getPiecesForColor('white')
     const fromFlag = this.getFlag(from)
     const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
@@ -341,10 +318,6 @@ export default class ChessBoard {
     // Set board with new piece on to position
     this._bitboards[fromColor][fromPiece] = this._bitboards[fromColor][fromPiece].or(toFlag)
     this._turn = this.flipColor(this._turn)
-
-    this._history.push(this.save())
-    
-    
     
     const oppositeColor = this.flipColor(fromColor)
     const oppositeKing = this._bitboards[oppositeColor]['K']
@@ -362,7 +335,8 @@ export default class ChessBoard {
       isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
       movedTo: to,
       isCheck: isCheck,
-      isCheckmate: false
+      isCheckmate: false,
+      state: this.save()
     }
   }
 
@@ -392,8 +366,8 @@ export default class ChessBoard {
     const lastState = this._history.pop()
     if (lastState) {
       this.loadAll(lastState)
-      this._turn = this.flipColor(this._turn)
     }
+    return lastState
   }
 
   flipColor(color: Color) {
@@ -449,6 +423,7 @@ export default class ChessBoard {
     movedTo: number
     isCheck: boolean
     isCheckmate: boolean
+    state: string
   }
 
  

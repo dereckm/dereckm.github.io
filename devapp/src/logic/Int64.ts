@@ -29,19 +29,21 @@ export default class Int64 {
   
     // Bitwise right shift
     shr(bits: number) {
-      if (bits === 0) return this
-      if (bits >= 64) return new Int64(0, 0)
-      bits &= 63; // Ensure bits is in the range [0, 63]
+      if (bits === 0) return this;
+      if (bits >= 64) return new Int64(0, 0); // Shifting everything out
+  
+      bits &= 63; // Ensure bits in range [0, 63]
+  
       if (bits < 32) {
-        return new Int64(
-          (((this.low >>> bits)) | ((this.high << (32 - bits)) >>> 0)),
-          (this.high >>> bits),
+          return new Int64(
+              (this.low >>> bits) | ((this.high << (32 - bits)) >>> 0),  // Shift low & carry from high
+              (this.high >>> bits) >>> 0  // Ensure unsigned shift
           );
       } else {
-        return new Int64(
-          ((this.high >> bits) & (~(1 << bits))) >>> 0,
-          0
-        );
+          return new Int64(
+              (this.high >>> (bits - 32)) >>> 0,  // Shift high into low
+              0
+          );
       }
     }
   

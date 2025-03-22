@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from './BoardView.module.css'
 import ChessBoard, { MoveResult } from './board'
-import { Piece, PromotablePiece, Color } from './models/Piece'
+import { Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
-import { calculateScoreDelta } from './logic/scoring-heuristics/scoring'
 
 const checkSound = new Audio('move-check.mp3')
 
@@ -21,57 +20,76 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [boardState, setBoardState] = useState<string>('**b******p**k**rr**qp**np*pP*p*NP**B*******PR*PB***KP**P*N****QR')
-  
-  const [index, setIndex] = useState<number | null>(null)
+  const [board, setBoard] = useState(new ChessBoard('**b******p**k**rr*******p****p**P**P*N*****K********P**P*N*****Q0'))
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
-  const [lastMoveResult, setLastMoveResult] = useState<MoveResult | null>(null)
-  const isBotEnabled = false
+  const [lastMoveResult, ] = useState<MoveResult | null>(null)
+  const [possibleMoves, setPossibleMoves] = useState<number[]>([])
+  const [isBotActive, setIsBotActive] = useState(true)
 
-  const botTurn = (color: Color) => {
-    const engineMove = engine.findDeepeningOptimalMove(board, color, 500)
-    if (engineMove.move == null) {
-      console.log('engine lost')
-      return
+  const handlePieceClick = (targetIndex: number) => {
+    if (selectedIndex === null) {
+      setSelectedIndex(targetIndex)
+    } else {
+      const legalMoves = board.getMoveIndexes(selectedIndex)
+      if (legalMoves.includes(targetIndex)) {
+        const moveResult = board.applyMove(selectedIndex, targetIndex)
+        if (moveResult.isCheck) {
+          checkSound.play()
+        }
+        if (moveResult.isPromotion) {
+          setIsPromoting(true)
+        }
+        setBoard(new ChessBoard(moveResult.state))
+
+        if (isBotActive) {
+          setTimeout(() => {
+            const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
+            if (result.move) {
+              const moveResult = board.applyMove(result.move?.from, result.move?.to)
+              if (moveResult.isCheck) {
+                checkSound.play()
+              }
+              setBoard(new ChessBoard(board.save()))
+            }
+          }, 100)
+        }
+      }
+      setSelectedIndex(null)
     }
-    const from = engineMove.move.from
-    const to = engineMove.move.to
-    const newMove = board.toNotation(from, to)
-    setHistory(prev => [...prev, newMove])
-    // board.applyMove(from, to)
-    console.log(calculateScoreDelta(board))
   }
 
-  const handlePieceClick = (newIndex: number) => {
-    setIndex(newIndex)
-  }
-
-  const board = useMemo(() => {
-    const chessboard = new ChessBoard()
-    chessboard.loadAll(boardState)
-    return chessboard
-  }, [boardState])
-
-  const possibleMoves = useMemo(() => {
-    const moves = index != null ? board.getMoveIndexes(index) : []
-    return new Set<number>(moves)
-  }, [board, index])
+  useEffect(() => {
+    if (selectedIndex != null) {
+      setPossibleMoves(board.getMoveIndexes(selectedIndex))
+    } else {
+      setPossibleMoves([])
+    }
+  }, [board, selectedIndex])
 
   const handlePromotion = (piece: PromotablePiece) => {
-    if (index != null && lastMoveResult != null) {
-      console.log(lastMoveResult)
+    if (selectedIndex != null && lastMoveResult != null) {
       board.applyPromotion(lastMoveResult.movedTo, piece)
-      board.print()
+      setBoard(new ChessBoard(board.save()))
       setIsPromoting(false)
+    }
+  }
+
+  const handleNextClick = () => {
+    const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
+    if (result.move) {
+      board.applyMove(result.move?.from, result.move?.to)
+      setBoard(new ChessBoard(board.save()))
     }
   }
 
   const handlePreviousClick = () => {
     board.undoMove()
+    setBoard(new ChessBoard(board.save()))
   }
 
-  const view = board.toBoardView()
+  const boardView = board.toBoardView()
  
   return (
     <>
@@ -87,9 +105,9 @@ export const Board = () => {
         )
       }
       { !isPromoting && (
-          <div className={styles['board-container']}>
+          <div key={selectedIndex} className={styles['board-container']}>
             <div className={styles.board}>
-              {view.map((row, i) => <BoardRow key={i} row={row} i={i} moves={possibleMoves} onClick={handlePieceClick} />)}
+              {boardView.map((row, i) => <BoardRow key={i} row={row} i={i} moves={possibleMoves} onClick={handlePieceClick} />)}
               <div className={styles['notation']}>
                 <span style={{ alignSelf: 'center', padding: '4px', visibility: 'hidden' }}>{'1'}</span>
                 {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(col => (<div className={styles['notation-col']} key={col}><span>{col}</span></div>))}
@@ -106,17 +124,20 @@ export const Board = () => {
       </div>
       <div className={styles['chessboard-controls']}>
           <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Previous</button>
-          <button className={styles['chessboard-control']} onClick={() => botTurn(board._turn)}>Next</button>
+          <button className={styles['chessboard-control']} onClick={handleNextClick}>Next</button>
           <button className={styles['chessboard-control']} onClick={() => {
             navigator.clipboard.writeText(board.save())
           }}>Copy</button>
+          <button className={isBotActive ? styles['chessboard-control-active'] : styles['chessboard-control']} onClick={() => {
+            setIsBotActive(prev => !prev)
+          }}>Bot: {isBotActive ? 'On' : 'Off'}</button>
         </div>
       </div>
     </>
   )
 }
 
-const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves: Set<number>, onClick: (j: number) => void }) => {
+const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves: number[], onClick: (j: number) => void }) => {
   return (
     <div key={i} className={styles.row}>
       <span style={{ alignSelf: 'center', padding: '4px' }}>{8 - i}</span>
@@ -124,7 +145,7 @@ const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves:
         const pieceStyle = square.color === 'black' ? styles.black : styles.white;
         const squareStyle = `${styles.square} ${((j + i) % 2) === 0 ? styles["square-white"] : styles["square-black"] }`
         let style = `${pieceStyle} ${squareStyle}`
-        if (moves.has(square.index)) {
+        if (moves.includes(square.index)) {
             style += ` ${styles['candidate-move']}`
         }
         return <div key={`${i}_${j}`} onClick={() => onClick(square.index)} className={style}><span>{square.piece != null ? iconsLookup[square.piece] : ""}</span></div>
