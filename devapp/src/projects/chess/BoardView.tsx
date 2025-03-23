@@ -43,17 +43,18 @@ export const Board = () => {
         if (moveResult.isPromotion) {
           setIsPromoting(true)
         }
-        setBoard(board.clone())
+        const clone = board.clone()
+        setBoard(clone)
 
         if (isBotActive) {
           setTimeout(() => {
-            const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
+            const result = engine.findDeepeningOptimalMove(clone, clone._turn, 500)
             if (result.move) {
-              const moveResult = board.applyMove(result.move?.from, result.move?.to)
+              const moveResult = clone.applyMove(result.move?.from, result.move?.to)
               if (moveResult.isCheck) {
                 checkSound.play()
               }
-              setBoard(new ChessBoard(board.save()))
+              setBoard(clone.clone())
             }
           }, 100)
         }

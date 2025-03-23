@@ -10,6 +10,7 @@ interface ScoredMove {
     score: number
 }
 
+const enableAlphaBetaPruning = false;
 
 
 export default class Engine {
@@ -47,6 +48,9 @@ export default class Engine {
               if (moveResult.isPromotion) {
                 board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
               }
+              if (board.isCheckmate()) {
+                return { move: move, score: color === 'black' ? -Infinity : Infinity }
+              }
               let evalScore = this.minimax(board, color === 'white' ? 'black' : 'white', depth - 1, alpha, beta);
               board.undoMove();
   
@@ -57,7 +61,7 @@ export default class Engine {
           }
           depth++; // Increase depth for the next iteration
       }
-      // this.printMetrics(depth, calculateScoreDelta(board))
+      this.printMetrics(depth, calculateScoreDelta(board))
       return { move: bestMove, score: 0 };
   }
 
@@ -85,11 +89,14 @@ export default class Engine {
               if (moveResult.isPromotion) {
                 board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
               }
+              if (board.isCheckmate()) {
+                return Infinity
+              }
               let evalScore = this.minimax(board, 'black', depth - 1, alpha, beta);
               board.undoMove();
               maxEval = Math.max(maxEval, evalScore);
               alpha = Math.max(alpha, evalScore);
-              if (beta <= alpha) {
+              if (enableAlphaBetaPruning && beta <= alpha) {
                 this._prunedNodes++;
                 break;
               }
@@ -102,11 +109,14 @@ export default class Engine {
               if (moveResult.isPromotion) {
                 board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
               }
+              if (board.isCheckmate()) {
+                return -Infinity
+              }
               let evalScore = this.minimax(board, 'white', depth - 1, alpha, beta);
               board.undoMove();
               minEval = Math.min(minEval, evalScore);
               beta = Math.min(beta, evalScore);
-              if (beta <= alpha) {
+              if (enableAlphaBetaPruning && beta <= alpha) {
                 this._prunedNodes++;
                 break;
               }

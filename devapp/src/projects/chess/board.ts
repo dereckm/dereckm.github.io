@@ -3,7 +3,8 @@ import { Color, Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { 
   checkPawnMoves, checkKnightMoves, checkBishopMoves, 
-  checkRookMoves, checkQueenMoves, checkKingMoves
+  checkRookMoves, checkQueenMoves, checkKingMoves,
+  getAllLegalMoves
  } from './logic/move-generation/moves'
 
 const SEVEN = 7
@@ -316,7 +317,7 @@ export default class ChessBoard {
     const fromFlag = this.getFlag(from)
     const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
     const fromPiece = this.getPiece(fromFlag)
-    if (fromPiece == null) throw new Error('Cannot find the piece to move')
+    if (fromPiece == null) throw new Error(`Cannot find the piece to move at index: ${from}`)
     const toFlag = this.getFlag(to)
 
     if (fromPiece === 'K') {
@@ -354,14 +355,6 @@ export default class ChessBoard {
     const oppositeKing = this._bitboards[oppositeColor]['K']
     const isCheck = this.isCheck(oppositeKing, oppositeColor)
 
-    // let isCheckmate = false
-    // if (isCheck) {
-    //   const legalMoves = this.getAllLegalMoves(oppositeColor)
-    //   if (legalMoves.length === 0) {
-    //     isCheckmate = true
-    //   }
-    // }
-
     return {
       isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
       movedTo: to,
@@ -369,6 +362,20 @@ export default class ChessBoard {
       isCheckmate: false,
       state: this.save()
     }
+  }
+
+  isCheckmate() {
+    const blackKing = this._bitboards['black']['K']
+    if (this.isCheck(blackKing, 'black')) {
+      const moves = getAllLegalMoves(this, 'black')
+      if (moves.length === 0) return true;
+    }
+    const whiteKing = this._bitboards['white']['K']
+    if (this.isCheck(whiteKing, 'white')) {
+      const moves = getAllLegalMoves(this, 'white')
+      if (moves.length === 0) return true;
+    }
+    return false
   }
 
   getColor(flag: Int64) {

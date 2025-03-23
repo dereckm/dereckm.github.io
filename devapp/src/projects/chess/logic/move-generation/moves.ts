@@ -280,9 +280,9 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
       }
       return moves.toSorted((a, b) =>  {
         if (a.isCapture && !b.isCapture) {
-          return 1
-        } else if (!a.isCapture && b.isCapture) {
           return -1
+        } else if (!a.isCapture && b.isCapture) {
+          return 1
         }
         return 0
       })
