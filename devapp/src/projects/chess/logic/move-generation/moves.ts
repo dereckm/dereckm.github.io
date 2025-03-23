@@ -1,6 +1,7 @@
 import Int64, { ONE, ZERO } from '../../../../logic/Int64';
 import { Color } from '../../models/Piece'
 import ChessBoard from '../../board';
+import { Piece } from '../../models/Piece'
 
 
 const knightMoves = generateKnightMoves()
@@ -247,9 +248,11 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
   export interface CandidateMove {
     from: number,
     to: number,
-    isCapture: boolean
+    isCapture: boolean,
+    promoteTo: Piece | null
   }
-  
+
+  const promoteTargets: Piece[] = ['N', 'B', 'R', 'Q']
   export function getAllLegalMoves(board: ChessBoard, color: Color): CandidateMove[] {
       const pieces = board.getPiecesForColor(color)
       const oppositePieces = board.getPiecesForColor(board.flipColor(color))
@@ -263,7 +266,14 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
                 for(const toIndex of toIndexes) {
                   const toFlag = board.getFlag(toIndex)
                   const isCapture = board.hasPiece(oppositePieces, toFlag)
-                  moves.push({ from: i, to: toIndex, isCapture: isCapture })
+                  const isPromotion = board.isPromotion(toFlag, color, piece)
+                  if (isPromotion) {
+                    for(const promoteTarget in promoteTargets) {
+                        moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: promoteTarget as Piece })
+                    }
+                  } else {
+                    moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: null })
+                  }
                 }
               }
           }

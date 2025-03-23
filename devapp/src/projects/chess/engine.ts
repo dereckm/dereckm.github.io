@@ -1,5 +1,5 @@
 import ChessBoard from "./board";
-import { Color } from './models/Piece'
+import { Color, PromotablePiece } from './models/Piece'
 import { calculateScoreDelta } from "./logic/scoring-heuristics/scoring";
 import { getAllLegalMoves, CandidateMove } from "./logic/move-generation/moves";
 
@@ -43,7 +43,10 @@ export default class Engine {
           let beta = Infinity;
   
           for (let move of legalMoves) {
-              board.applyMove(move.from, move.to);
+              const moveResult = board.applyMove(move.from, move.to);
+              if (moveResult.isPromotion) {
+                board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
+              }
               let evalScore = this.minimax(board, color === 'white' ? 'black' : 'white', depth - 1, alpha, beta);
               board.undoMove();
   
@@ -54,7 +57,7 @@ export default class Engine {
           }
           depth++; // Increase depth for the next iteration
       }
-      this.printMetrics(depth, calculateScoreDelta(board))
+      // this.printMetrics(depth, calculateScoreDelta(board))
       return { move: bestMove, score: 0 };
   }
 
@@ -71,14 +74,17 @@ export default class Engine {
     minimax(board: ChessBoard, color: Color, depth: number, alpha: number, beta: number): number {
       this._exploredPaths++;
       if (depth === 0 || Date.now() - this._timer > this._timeoutMs) {
-          return calculateScoreDelta(board);
+          return calculateScoreDelta(board) // this.quiescenceSearch(board, color, alpha, beta)
       }
   
       let legalMoves = getAllLegalMoves(board, color);
       if (color === 'white') {
           let maxEval = -Infinity;
           for (let move of legalMoves) {
-              board.applyMove(move.from, move.to);
+              const moveResult = board.applyMove(move.from, move.to);
+              if (moveResult.isPromotion) {
+                board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
+              }
               let evalScore = this.minimax(board, 'black', depth - 1, alpha, beta);
               board.undoMove();
               maxEval = Math.max(maxEval, evalScore);
@@ -92,7 +98,10 @@ export default class Engine {
       } else {
           let minEval = Infinity;
           for (let move of legalMoves) {
-              board.applyMove(move.from, move.to);
+              const moveResult = board.applyMove(move.from, move.to);
+              if (moveResult.isPromotion) {
+                board.applyPromotion(move.to, move.promoteTo as PromotablePiece)
+              }
               let evalScore = this.minimax(board, 'white', depth - 1, alpha, beta);
               board.undoMove();
               minEval = Math.min(minEval, evalScore);
@@ -104,5 +113,21 @@ export default class Engine {
           }
           return minEval;
       }
+  }
+
+    quiescenceSearch(board: ChessBoard, color: Color, alpha: number, beta: number): number {
+      let standPat = calculateScoreDelta(board); // Current evaluation
+      if (standPat >= beta) return beta; // Cut off search
+      alpha = Math.max(alpha, standPat);
+
+      let captureMoves = getAllLegalMoves(board, color).filter(move => move.isCapture); // Only captures
+      for (let move of captureMoves) {
+          board.applyMove(move.from, move.to);
+          let score = -this.quiescenceSearch(board, color === 'white' ? 'black' : 'white', -beta, -alpha);
+          board.undoMove();
+          if (score >= beta) return beta; // Prune
+          alpha = Math.max(alpha, score);
+      }
+      return alpha;
   }
 }

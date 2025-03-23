@@ -34,6 +34,12 @@ export default class ChessBoard {
   _hasWhiteKingSideCastleRight = true;
   _hasWhiteQueenSideCastleRight = true;
 
+  clone() {
+    const b = new ChessBoard(this.save())
+    b._history = this._history
+    return b
+  }
+
   save() {
     let fen = ''
     let count = 0;
@@ -92,9 +98,6 @@ export default class ChessBoard {
       }
     }
     this._turn = chunks[1] === 'w' ? 'white' : 'black'
-    if (chunks[2] == null) {
-      console.log(fen)
-    }
     this._hasWhiteKingSideCastleRight = chunks[2].includes('K')
     this._hasWhiteQueenSideCastleRight = chunks[2].includes('Q')
     this._hasBlackKingSideCastleRight = chunks[2].includes('k')

@@ -5,6 +5,8 @@ import { Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
+import { calculateScoreDelta } from './logic/scoring-heuristics/scoring'
+import { DEFAULT_BOARD } from './constants/fen'
 
 const checkSound = new Audio('move-check.mp3')
 
@@ -20,20 +22,19 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/R3K2R w KQ'))
+  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
   const [lastMoveResult, ] = useState<MoveResult | null>(null)
   const [possibleMoves, setPossibleMoves] = useState<number[]>([])
-  const [isBotActive, setIsBotActive] = useState(true)
+  const [isBotActive, setIsBotActive] = useState(false)
 
   const handlePieceClick = (targetIndex: number) => {
     if (selectedIndex === null) {
       setSelectedIndex(targetIndex)
     } else {
       const legalMoves = board.getMoveIndexes(selectedIndex)
-      // debugger;
       if (legalMoves.includes(targetIndex)) {
         const moveResult = board.applyMove(selectedIndex, targetIndex)
         if (moveResult.isCheck) {
@@ -42,7 +43,7 @@ export const Board = () => {
         if (moveResult.isPromotion) {
           setIsPromoting(true)
         }
-        setBoard(new ChessBoard(moveResult.state))
+        setBoard(board.clone())
 
         if (isBotActive) {
           setTimeout(() => {
@@ -72,7 +73,7 @@ export const Board = () => {
   const handlePromotion = (piece: PromotablePiece) => {
     if (selectedIndex != null && lastMoveResult != null) {
       board.applyPromotion(lastMoveResult.movedTo, piece)
-      setBoard(new ChessBoard(board.save()))
+      setBoard(board.clone())
       setIsPromoting(false)
     }
   }
@@ -84,17 +85,19 @@ export const Board = () => {
       if (moveResult.isCheck) {
         checkSound.play()
       }
-      setBoard(new ChessBoard(board.save()))
+      setBoard(board.clone())
     }
   }
 
   const handlePreviousClick = () => {
-    board.undoMove()
-    setBoard(new ChessBoard(board.save()))
+    console.log('undo!')
+    const lastState = board.undoMove()
+    if (lastState) {
+      setBoard(board.clone())
+    }
   }
 
   const boardView = board.toBoardView()
-  console.log(board.save())
  
   return (
     <>

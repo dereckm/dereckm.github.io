@@ -81,6 +81,10 @@ test('should apply white queen-side castling correctly', () => {
     expect(newState).toBe('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/2KR3R b k')
 })
 
+
+//TODO : Make sure black can castle as well
+//TODO : Investigate why bot keeps sacrificing material
+
 function setUp(boardString: string) {
     const board = new ChessBoard(boardString)
     return board

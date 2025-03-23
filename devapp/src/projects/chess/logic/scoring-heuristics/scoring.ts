@@ -3,7 +3,7 @@ import { Color } from '../../models/Piece'
 
 export function calculatePiecesScore(board: ChessBoard, color: Color) {
     let score = 0
-    for(let i = 0; i < 63; i++) {
+    for(let i = 0; i < 64; i++) {
         const flag = board.getFlag(i)
         if (board.hasPiece(board._bitboards[color]['P'], flag)) score += 1;
         else if (board.hasPiece(board._bitboards[color]['N'], flag)) score += 3;
@@ -15,23 +15,25 @@ export function calculatePiecesScore(board: ChessBoard, color: Color) {
 }
 export function calculatePositionalScore(board: ChessBoard, color: Color) {
     const pieces = board.getPiecesForColor(color)
-    const squareTable = color === 'white' ? whitePiecesSquareTable : blackPiecesSquareTable
     let positionalScore = 0;
     for(let i = 0; i < 64; i++) {
         const flag = board.getFlag(i)
         if (board.hasPiece(pieces, flag)) {
             const piece = board.getPiece(flag) 
             if (piece == null) throw new Error('piece should never be null here')
-            const score = squareTable[piece][63 - i]
-            positionalScore += (score / 100.0);
+            const index = color === 'white' ? 63 - i : i
+            const score = squareTable[piece][index]
+            positionalScore += score;
         }
     }
     return positionalScore
 }
 
+const POSITION_WEIGTH = 0.03
+
 export function calculateScoreOfColor(board: ChessBoard, color: Color) {
     let scoreOfColor = calculatePiecesScore(board, color)
-    scoreOfColor += calculatePositionalScore(board, color)
+    scoreOfColor += (calculatePositionalScore(board, color) * POSITION_WEIGTH)
     return scoreOfColor
 }
 
@@ -40,7 +42,7 @@ export function calculateScoreDelta(board: ChessBoard) {
 }
 
 
-const whitePiecesSquareTable: { [key: string] : number[] } = {
+const squareTable: { [key: string] : number[] } = {
     'P': [
             0, 0, 0, 0, 0, 0, 0, 0,
             50, 50, 50, 50, 50, 50, 50, 50,
@@ -111,13 +113,3 @@ const whitePiecesSquareTable: { [key: string] : number[] } = {
         -50, -40, -30, -20, -20, -30, -40, -50
     ]
 };
-
-const blackPiecesSquareTable = {
-    'P': whitePiecesSquareTable['P'].toReversed(),
-    'N': whitePiecesSquareTable['N'].toReversed(),
-    'B': whitePiecesSquareTable['B'].toReversed(),
-    'R': whitePiecesSquareTable['R'].toReversed(),
-    'Q': whitePiecesSquareTable['Q'].toReversed(),
-    'K': whitePiecesSquareTable['K'].toReversed(),
-    'K_endgame': whitePiecesSquareTable['K_endgame'].toReversed()
-}
