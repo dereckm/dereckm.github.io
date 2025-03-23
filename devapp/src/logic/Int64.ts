@@ -76,6 +76,10 @@ export default class Int64 {
         ? Math.log2(this.high) + 32
         : Math.log2(this.low)
     }
+
+    isBitSet(index: number) {
+      return !this.and(ONE.shl(index)).isZero()
+    }
   
     equals(other: Int64) {
       return this.low === other.low && this.high === other.high

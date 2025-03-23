@@ -20,7 +20,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard('**b******p**k**rr*******p****p**P**P*N*****K********P**P*N*****Q0'))
+  const [board, setBoard] = useState(new ChessBoard('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/R3K2R w KQ'))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
@@ -33,6 +33,7 @@ export const Board = () => {
       setSelectedIndex(targetIndex)
     } else {
       const legalMoves = board.getMoveIndexes(selectedIndex)
+      // debugger;
       if (legalMoves.includes(targetIndex)) {
         const moveResult = board.applyMove(selectedIndex, targetIndex)
         if (moveResult.isCheck) {
@@ -79,7 +80,10 @@ export const Board = () => {
   const handleNextClick = () => {
     const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
     if (result.move) {
-      board.applyMove(result.move?.from, result.move?.to)
+      const moveResult = board.applyMove(result.move?.from, result.move?.to)
+      if (moveResult.isCheck) {
+        checkSound.play()
+      }
       setBoard(new ChessBoard(board.save()))
     }
   }
@@ -90,6 +94,7 @@ export const Board = () => {
   }
 
   const boardView = board.toBoardView()
+  console.log(board.save())
  
   return (
     <>

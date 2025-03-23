@@ -133,9 +133,25 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
 }
 
 export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
-    // TODO : Castling
+
     const index = flag.log2()
-    const moves = kingMoves[index]
+    let moves = kingMoves[index]
+    const pieces = board.getAllPieces()
+    if (color === 'white') {
+        if (board._hasWhiteKingSideCastleRight && !pieces.isBitSet(1) && !pieces.isBitSet(2)) {
+            moves = moves.or(ONE.shl(1))
+        } 
+        if (board._hasWhiteQueenSideCastleRight && !pieces.isBitSet(4) && !pieces.isBitSet(5) && !pieces.isBitSet(6)) {
+            moves = moves.or(ONE.shl(5))
+        }
+    } else if (color === 'black') {
+        if (board._hasBlackKingSideCastleRight && !pieces.isBitSet(56) && !pieces.isBitSet(57)) {
+            moves = moves.or(ONE.shl(57))
+        } 
+        if (board._hasBlackQueenSideCastleRight && !pieces.isBitSet(61) && !pieces.isBitSet(60)) {
+            moves = moves.or(ONE.shl(60))
+        }
+    }
     const stepOvers = board.getPiecesForColor(color)
     const validMoves = moves.and(stepOvers.not())
     return validMoves
@@ -227,3 +243,37 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
     }
     return validMoves
   }
+
+  export interface CandidateMove {
+    from: number,
+    to: number,
+    isCapture: boolean
+  }
+  
+  export function getAllLegalMoves(board: ChessBoard, color: Color): CandidateMove[] {
+      const pieces = board.getPiecesForColor(color)
+      const oppositePieces = board.getPiecesForColor(board.flipColor(color))
+      const moves = []
+      for(let i = 0; i < 64; i++) {
+          const flag = board.getFlag(i)
+          if (board.hasPiece(pieces, flag)) {
+              const piece = board.getPiece(flag)
+              if (piece != null) {
+                const toIndexes = board.getMoveIndexes(i)
+                for(const toIndex of toIndexes) {
+                  const toFlag = board.getFlag(toIndex)
+                  const isCapture = board.hasPiece(oppositePieces, toFlag)
+                  moves.push({ from: i, to: toIndex, isCapture: isCapture })
+                }
+              }
+          }
+      }
+      return moves.toSorted((a, b) =>  {
+        if (a.isCapture && !b.isCapture) {
+          return 1
+        } else if (!a.isCapture && b.isCapture) {
+          return -1
+        }
+        return 0
+      })
+    }

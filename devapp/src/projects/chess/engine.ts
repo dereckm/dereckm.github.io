@@ -1,6 +1,7 @@
-import ChessBoard, { CandidateMove } from "./board";
+import ChessBoard from "./board";
 import { Color } from './models/Piece'
 import { calculateScoreDelta } from "./logic/scoring-heuristics/scoring";
+import { getAllLegalMoves, CandidateMove } from "./logic/move-generation/moves";
 
 const TIMEOUT_MS = 500
 
@@ -37,7 +38,7 @@ export default class Engine {
       this._prunedNodes = 0;
       this._timeoutMs = timeoutMs;
       while (Date.now() - this._timer < timeoutMs) {
-          let legalMoves = board.getAllLegalMoves(color);
+          let legalMoves = getAllLegalMoves(board, color);
           let alpha = -Infinity;
           let beta = Infinity;
   
@@ -73,7 +74,7 @@ export default class Engine {
           return calculateScoreDelta(board);
       }
   
-      let legalMoves = board.getAllLegalMoves(color);
+      let legalMoves = getAllLegalMoves(board, color);
       if (color === 'white') {
           let maxEval = -Infinity;
           for (let move of legalMoves) {

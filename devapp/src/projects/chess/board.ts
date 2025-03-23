@@ -14,12 +14,6 @@ const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
-export interface CandidateMove {
-  from: number,
-  to: number,
-  isCapture: boolean
-}
-
 export default class ChessBoard {
   _history: string[] = []
 
@@ -34,50 +28,77 @@ export default class ChessBoard {
     this.loadAll(state)
   }
 
+  _hasBlackKingSideCastleRight = true;
+  _hasBlackQueenSideCastleRight = true;
+
+  _hasWhiteKingSideCastleRight = true;
+  _hasWhiteQueenSideCastleRight = true;
+
   save() {
-    const view = this.toBoardView()
-    let text = ''
-    for(let i = 0; i < view.length; i++) {
-      text += view[i].map(sq => {
-        if (sq.piece == null) return '*'
-        if (sq.color === 'black') return sq.piece.toLowerCase()
-        return sq.piece
-      }).join('')
-    }
-    text += this._turn === 'white' ? '1' : '0'
-    return text
-  }
-
-  loadAll(state: string) {
-    let white = ''
-    let black = ''
-    this._turn = state[64] === '1' ? 'white' : 'black'
-    for(let i = 0; i < 64; i++) {
-      const c = state[i]
-      if (c === '0') {
-        white += '0'
-        black += '0'
-      }
-      else if (c.toUpperCase() === c) {
-        white += c
-        black += '0'
+    let fen = ''
+    let count = 0;
+    for(let i = 63; i >= 0; i--) {
+      const flag = this.getFlag(i)
+      const piece = this.getPiece(flag)
+      const color = this.getColor(flag)
+      if (piece != null) {
+        if (count !== 0) fen += count;
+        fen += color === 'white' ? piece : piece.toLowerCase()
+        count = 0;
       } else {
-        white += '0'
-        black += c.toUpperCase()
+        count++;
+      }
+      if (i % 8 === 0 && i !== 0) {
+         if(count !== 0) fen += count;
+         fen += '/'
+         count = 0;
       }
     }
-    this.load(white, 'white')
-    this.load(black, 'black')
+    if (count > 0 ) fen += count
+    fen += this._turn === 'white' ? ' w' : ' b'
+    let castlingRights = ''
+    if (this._hasWhiteKingSideCastleRight) castlingRights += 'K'
+    if (this._hasWhiteQueenSideCastleRight) castlingRights += 'Q'
+    if (this._hasBlackKingSideCastleRight) castlingRights += 'k'
+    if (this._hasBlackQueenSideCastleRight) castlingRights += 'q'
+    if (castlingRights === '') castlingRights = '-'
+    fen += ` ${castlingRights}`
+    return fen
   }
 
-  load(string: string, color: Color) {
-    this._bitboards[color] = {} as Record<Piece, Int64>
-    this._bitboards[color]['P'] = Int64.fromString(this.toBinaryString(string, 'P'))
-    this._bitboards[color]['N'] = Int64.fromString(this.toBinaryString(string, 'N'))
-    this._bitboards[color]['B'] = Int64.fromString(this.toBinaryString(string, 'B'))
-    this._bitboards[color]['R'] = Int64.fromString(this.toBinaryString(string, 'R'))
-    this._bitboards[color]['Q'] = Int64.fromString(this.toBinaryString(string, 'Q'))
-    this._bitboards[color]['K'] = Int64.fromString(this.toBinaryString(string, 'K'))
+  loadAll(fen: string) {
+    const chunks = fen.split(' ')
+    const pieces = chunks[0]
+    this._bitboards['white'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
+    this._bitboards['black'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
+    let index = 0;
+    for (let i = 0; i < pieces.length; i++) {
+      const char = pieces[i]
+      const number = parseInt(char)
+      if (char === '/') {
+        // ignore
+      } else if (!isNaN(number)) {
+        index += number;
+      } else if (char === char.toLowerCase()) {
+        const piece: Piece = char.toUpperCase() as Piece
+        const flag = this.getFlag(63 - index)
+        this._bitboards['black'][piece] = this._bitboards['black'][piece].or(flag)
+        index += 1;
+      } else {
+        const piece: Piece = char as Piece
+        const flag = this.getFlag(63 - index)
+        this._bitboards['white'][piece] = this._bitboards['white'][piece].or(flag)
+        index += 1;
+      }
+    }
+    this._turn = chunks[1] === 'w' ? 'white' : 'black'
+    if (chunks[2] == null) {
+      console.log(fen)
+    }
+    this._hasWhiteKingSideCastleRight = chunks[2].includes('K')
+    this._hasWhiteQueenSideCastleRight = chunks[2].includes('Q')
+    this._hasBlackKingSideCastleRight = chunks[2].includes('k')
+    this._hasBlackQueenSideCastleRight = chunks[2].includes('q')
   }
 
   toBinaryString(input: string, char: string) {
@@ -123,33 +144,7 @@ export default class ChessBoard {
     return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
   }
 
-  getAllLegalMoves(color: Color): CandidateMove[] {
-    const pieces = this.getPiecesForColor(color)
-    const oppositePieces = this.getPiecesForColor(this.flipColor(color))
-    const moves = []
-    for(let i = 0; i < 64; i++) {
-        const flag = this.getFlag(i)
-        if (this.hasPiece(pieces, flag)) {
-            const piece = this.getPiece(flag)
-            if (piece != null) {
-              const toIndexes = this.getMoveIndexes(i)
-              for(const toIndex of toIndexes) {
-                const toFlag = this.getFlag(toIndex)
-                const isCapture = this.hasPiece(oppositePieces, toFlag)
-                moves.push({ from: i, to: toIndex, isCapture: isCapture })
-              }
-            }
-        }
-    }
-    return moves.toSorted((a, b) =>  {
-      if (a.isCapture && !b.isCapture) {
-        return 1
-      } else if (!a.isCapture && b.isCapture) {
-        return -1
-      }
-      return 0
-    })
-  }
+  
 
   checkMoves(index: number) {
     const flag = this.getFlag(index)
@@ -294,6 +289,22 @@ export default class ChessBoard {
     console.log(text)
   }
 
+  applyCastlingMove(toIndex: number) {
+    if (toIndex === 1) {
+      this._bitboards['white']['R'] = this._bitboards['white']['R'].xor(ONE)
+      this._bitboards['white']['R'] = this._bitboards['white']['R'].or(this.getFlag(2))
+    } else if (toIndex === 5) {
+      this._bitboards['white']['R'] = this._bitboards['white']['R'].xor(this.getFlag(7))
+      this._bitboards['white']['R'] = this._bitboards['white']['R'].or(this.getFlag(4))
+    } else if (toIndex === 57) {
+      this._bitboards['black']['R'] = this._bitboards['black']['R'].xor(this.getFlag(56))
+      this._bitboards['black']['R'] = this._bitboards['black']['R'].or(this.getFlag(58))
+    } else if (toIndex === 61) {
+      this._bitboards['black']['R'] = this._bitboards['black']['R'].xor(this.getFlag(63))
+      this._bitboards['black']['R'] = this._bitboards['black']['R'].or(this.getFlag(60))
+    }
+  }
+
   applyMove(from: number, to: number): MoveResult {
 
     this._history.push(this.save())
@@ -304,6 +315,23 @@ export default class ChessBoard {
     const fromPiece = this.getPiece(fromFlag)
     if (fromPiece == null) throw new Error('Cannot find the piece to move')
     const toFlag = this.getFlag(to)
+
+    if (fromPiece === 'K') {
+      const diff = from - to
+      if (diff === 2 || diff === -2) {
+        this.applyCastlingMove(to)
+      }
+    }
+
+    if (this._hasWhiteKingSideCastleRight && (from === 0 || from === 3)) {
+      this._hasWhiteKingSideCastleRight = false;
+    } if (this._hasWhiteQueenSideCastleRight && (from === 3 || from === 7)) {
+      this._hasWhiteQueenSideCastleRight = false;
+    } if (this._hasBlackKingSideCastleRight && (from === 56 || from === 59)) {
+      this._hasBlackKingSideCastleRight = false;
+    } if (this._hasBlackQueenSideCastleRight && (from === 59 || from === 63)) {
+      this._hasBlackQueenSideCastleRight = false;
+    }
     
     const toPiece = this.getPiece(toFlag)
     if (toPiece != null) {
