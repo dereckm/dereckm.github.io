@@ -29,7 +29,7 @@ const queenEdges = [
 
 type Coords = [x: number, y: number]
 
-function generateKingMoves() {
+export function generateKingMoves() {
     const lookup: Record<number, Int64> = {}
     for(let i = 0; i < 64; i++) {
         const { x, y } = toCoords(i)
@@ -60,7 +60,7 @@ function isInBounds(move: Coords) {
     return x >= 0 && x <= 7 && y >= 0 && y <= 7
 }
 
-function generateKnightMoves() {
+export function generateKnightMoves() {
     const lookup: Record<number, Int64> = {}
     for(let i = 0; i < 64; i++) {
         const { x, y } = toCoords(i)
@@ -86,12 +86,12 @@ function generateKnightMoves() {
     return lookup
 }
 
-function toIndex(x: number, y: number) {
-    return y * 8 + (7 - x)
+export function toIndex(x: number, y: number) {
+    return y * 8 + x
 }
 
 export function toCoords(index: number) {
-    const x = 7 - (index % 8)
+    const x = index % 8
     const y = Math.floor(index / 8)
     return { x, y }
 }
@@ -120,7 +120,10 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
         
         for(let i = 1; i <= 7; i++) {
             const pos = directions[direction](i)
-            
+            const coords = toCoords(pos.log2())
+            if (!isInBounds([coords.x, coords.y])) {
+                break;
+            }
             if (board.hasPiece(sameColorPieces, pos)) {
                 break
             }
@@ -134,6 +137,7 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
 }
 
 export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
+    if (flag.isZero()) return ZERO
 
     const index = flag.log2()
     let moves = kingMoves[index]
@@ -154,6 +158,8 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
         }
     }
     const stepOvers = board.getPiecesForColor(color)
+    if (moves == null)
+        console.log(index)
     const validMoves = moves.and(stepOvers.not())
     return validMoves
   }
@@ -204,46 +210,46 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
   
 
   export function checkPawnMoves(board: ChessBoard, flag: Int64, color: Color) {
-    let validMoves: Int64 = new Int64(0)
-    // TODO : check en passant
+    let validMoves = ZERO;
+    const index = flag.log2();
+    const x = index % 8;
+    
     if (color === 'white') {
-        const forwardOne = flag.shl(8)
-        if (!board.hasPiece(board.getAllPieces(), forwardOne)) {
-            validMoves = validMoves.or(forwardOne)
-            const forwardTwo = flag.shl(16)
-            if (board.hasPiece(WHITE_PAWN_START, flag) && !board.hasPiece(board.getAllPieces(), forwardTwo)) {
-                validMoves = validMoves.or(forwardTwo)
-            }
-        }
-        const blackPieces = board.getPiecesForColor('black')
-        let possibleCaptures = ZERO
-        const index = flag.log2()
-        const x = index % 8
-        if (x > 0) possibleCaptures = possibleCaptures.or(flag.shl(7))
-        if (x < 7) possibleCaptures = possibleCaptures.or(flag.shl(9))
-        const captures = possibleCaptures.and(blackPieces)
-        validMoves = validMoves.or(captures)
-    } else if (color === 'black') {
-        const forwardOne = flag.shr(8)
-        if (!board.hasPiece(board.getAllPieces(), forwardOne)) {
-            validMoves = validMoves.or(forwardOne)
-            const forwardTwo = flag.shr(16)
-            if (board.hasPiece(BLACK_PAWN_START, flag) && !board.hasPiece(board.getAllPieces(), forwardTwo)) {
-                validMoves = validMoves.or(forwardTwo)
-            }
-        }
-        
-        const whitePieces = board.getPiecesForColor('white')
-        let possibleCaptures = ZERO
-        const index = flag.log2()
-        const x = index % 8
-        if (x < 7) possibleCaptures = possibleCaptures.or(flag.shr(7))
-        if (x > 0) possibleCaptures = possibleCaptures.or(flag.shr(9))
-        const captures = possibleCaptures.and(whitePieces)
-        validMoves = validMoves.or(captures)
+        validMoves = validMoves.or(getPawnForwardMoves(board, flag, WHITE_PAWN_START, true));
+        validMoves = validMoves.or(getPawnCaptureMoves(board, flag, x, 'black', true));
+    } else {
+        validMoves = validMoves.or(getPawnForwardMoves(board, flag, BLACK_PAWN_START, false));
+        validMoves = validMoves.or(getPawnCaptureMoves(board, flag, x, 'white', false));
     }
-    return validMoves
-  }
+    
+    return validMoves;
+}
+
+function getPawnForwardMoves(board: ChessBoard, flag: Int64, startPosition: Int64, isWhite: boolean): Int64 {
+    const forwardOne = isWhite ? flag.shl(8) : flag.shr(8);
+    let moves = ZERO;
+
+    if (!board.hasPiece(board.getAllPieces(), forwardOne)) {
+        moves = moves.or(forwardOne);
+        const forwardTwo = isWhite ? flag.shl(16) : flag.shr(16);
+        if (board.hasPiece(startPosition, flag) && !board.hasPiece(board.getAllPieces(), forwardTwo)) {
+            moves = moves.or(forwardTwo);
+        }
+    }
+    return moves;
+}
+
+function getPawnCaptureMoves(board: ChessBoard, flag: Int64, x: number, opponentColor: Color, isWhite: boolean): Int64 {
+    let captures = ZERO;
+    const opponentPieces = board.getPiecesForColor(opponentColor);
+    const leftCapture = isWhite ? flag.shl(7) : flag.shr(9);
+    const rightCapture = isWhite ? flag.shl(9) : flag.shr(7);
+
+    if (x > 0) captures = captures.or(leftCapture);
+    if (x < 7) captures = captures.or(rightCapture);
+
+    return captures.and(opponentPieces);
+}
 
   export interface CandidateMove {
     from: number,
@@ -268,7 +274,7 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
                   const isCapture = board.hasPiece(oppositePieces, toFlag)
                   const isPromotion = board.isPromotion(toFlag, color, piece)
                   if (isPromotion) {
-                    for(const promoteTarget in promoteTargets) {
+                    for(const promoteTarget of promoteTargets) {
                         moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: promoteTarget as Piece })
                     }
                   } else {

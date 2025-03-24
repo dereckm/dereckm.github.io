@@ -61,7 +61,7 @@ export default class Engine {
           }
           depth++; // Increase depth for the next iteration
       }
-      this.printMetrics(depth, calculateScoreDelta(board))
+      // this.printMetrics(depth, calculateScoreDelta(board))
       return { move: bestMove, score: 0 };
   }
 

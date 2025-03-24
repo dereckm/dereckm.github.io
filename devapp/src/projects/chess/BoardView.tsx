@@ -22,7 +22,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
+  const [board, setBoard] = useState(new ChessBoard('rnbqkbnr/pppppppp/8/8/8/5p2/PPPPPPPP/RNBQKBNR w KQkq e6 0 2'))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
