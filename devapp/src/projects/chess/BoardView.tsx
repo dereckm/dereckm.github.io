@@ -26,7 +26,7 @@ export const Board = () => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
-  const [lastMoveResult, ] = useState<MoveResult | null>(null)
+  const [lastMoveResult, setLastMoveResult] = useState<MoveResult | null>(null)
   const [possibleMoves, setPossibleMoves] = useState<number[]>([])
   const [isBotActive, setIsBotActive] = useState(true)
 
@@ -42,6 +42,7 @@ export const Board = () => {
         }
         if (moveResult.isPromotion) {
           setIsPromoting(true)
+          setLastMoveResult(moveResult)
         }
         const clone = board.clone()
         setBoard(clone)
@@ -72,10 +73,11 @@ export const Board = () => {
   }, [board, selectedIndex])
 
   const handlePromotion = (piece: PromotablePiece) => {
-    if (selectedIndex != null && lastMoveResult != null) {
+    if (lastMoveResult != null) {
       board.applyPromotion(lastMoveResult.movedTo, piece)
       setBoard(board.clone())
       setIsPromoting(false)
+      setLastMoveResult(null)
     }
   }
 
@@ -92,7 +94,6 @@ export const Board = () => {
   }
 
   const handlePreviousClick = () => {
-    console.log('undo!')
     const lastState = board.undoMove()
     if (lastState) {
       setBoard(board.clone())
@@ -133,7 +134,7 @@ export const Board = () => {
         </div>
       </div>
       <div className={styles['chessboard-controls']}>
-          <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Previous</button>
+          <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Undo</button>
           <button className={styles['chessboard-control']} onClick={handleNextClick}>Next</button>
           <button className={styles['chessboard-control']} onClick={() => {
             navigator.clipboard.writeText(board.save())

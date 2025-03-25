@@ -149,8 +149,6 @@ export default class ChessBoard {
     return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
   }
 
-  
-
   checkMoves(index: number) {
     const flag = this.getFlag(index)
     const color = this._turn
@@ -342,9 +340,7 @@ export default class ChessBoard {
     return {
       isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
       movedTo: to,
-      isCheck: isCheck,
-      isCheckmate: false,
-      state: this.save()
+      isCheck: isCheck
     }
   }
 
@@ -444,8 +440,6 @@ export default class ChessBoard {
     isPromotion: boolean
     movedTo: number
     isCheck: boolean
-    isCheckmate: boolean
-    state: string
   }
 
  
