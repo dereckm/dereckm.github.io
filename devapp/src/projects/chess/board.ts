@@ -6,10 +6,11 @@ import {
   checkRookMoves, checkQueenMoves, checkKingMoves,
   getAllLegalMoves
  } from './logic/move-generation/moves'
-import { SQUARE_INDEX } from "./constants/squares"
+import { FLAGS_LOOKUP_INDEX, SQUARE_INDEX } from "./constants/squares"
 
 const SEVEN = 7
 const NINE = 9
+const NOT_NUMBER = -1;
 
 const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
 const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
@@ -48,8 +49,9 @@ export default class ChessBoard {
     for(let i = 63; i >= 0; i--) {
       const flag = this.getFlag(i)
       const piece = this.getPiece(flag)
-      const color = this.getColor(flag)
+      
       if (piece != null) {
+        const color = this.getColor(flag)
         if (count !== 0) fen += count;
         fen += color === 'white' ? piece : piece.toLowerCase()
         count = 0;
@@ -74,6 +76,20 @@ export default class ChessBoard {
     return fen
   }
 
+  getInteger(char: string) {
+    switch(char) {
+      case '1': return 1;
+      case '2': return 2;
+      case '3': return 3;
+      case '4': return 4;
+      case '5': return 5;
+      case '6': return 6;
+      case '7': return 7;
+      case '8': return 8;
+      default: return -1;
+    }
+  }
+
   loadAll(fen: string) {
     const chunks = fen.split(' ')
     const pieces = chunks[0]
@@ -82,10 +98,9 @@ export default class ChessBoard {
     let index = 0;
     for (let i = 0; i < pieces.length; i++) {
       const char = pieces[i]
-      const number = parseInt(char)
-      if (char === '/') {
-        // ignore
-      } else if (!isNaN(number)) {
+      if (char === '/') continue;
+      const number = this.getInteger(char)
+      if (number !== NOT_NUMBER) {
         index += number;
       } else if (char === char.toLowerCase()) {
         const piece: Piece = char.toUpperCase() as Piece
@@ -115,7 +130,7 @@ export default class ChessBoard {
   }
   
   getFlag(index: number) {
-    return ONE.shl(index)
+    return FLAGS_LOOKUP_INDEX[index]
   }
 
   getIndex(i: number, j: number) {

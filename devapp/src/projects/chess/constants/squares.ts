@@ -1,4 +1,4 @@
-import { ONE } from "../../../logic/Int64";
+import Int64, { ONE } from "../../../logic/Int64";
 
 
 export const SQUARE_FLAGS = {
@@ -74,6 +74,15 @@ export const SQUARE_FLAGS = {
     a7: ONE.shl(7 + 48),
     a8: ONE.shl(7 + 56),
 }
+
+const generateFlagsLookupByIndex = () => {
+    const lookup: Record<number, Int64> = {}
+    for(let i = 0; i < 64; i++) {
+        lookup[i] = ONE.shl(i)
+    }
+    return lookup
+}
+export const FLAGS_LOOKUP_INDEX: Record<number, Int64> = generateFlagsLookupByIndex()
 
 export const SQUARE_INDEX = {
     h1: 0,
