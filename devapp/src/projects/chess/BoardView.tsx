@@ -22,13 +22,13 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard('rnbqkbnr/pppppppp/8/8/8/5p2/PPPPPPPP/RNBQKBNR w KQkq e6 0 2'))
+  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
   const [lastMoveResult, ] = useState<MoveResult | null>(null)
   const [possibleMoves, setPossibleMoves] = useState<number[]>([])
-  const [isBotActive, setIsBotActive] = useState(false)
+  const [isBotActive, setIsBotActive] = useState(true)
 
   const handlePieceClick = (targetIndex: number) => {
     if (selectedIndex === null) {
@@ -48,7 +48,7 @@ export const Board = () => {
 
         if (isBotActive) {
           setTimeout(() => {
-            const result = engine.findDeepeningOptimalMove(clone, clone._turn, 500)
+            const result = engine.findDeepeningOptimalMove(clone, 'black', 500)
             if (result.move) {
               const moveResult = clone.applyMove(result.move?.from, result.move?.to)
               if (moveResult.isCheck) {
@@ -81,6 +81,7 @@ export const Board = () => {
 
   const handleNextClick = () => {
     const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
+    debugger;
     if (result.move) {
       const moveResult = board.applyMove(result.move?.from, result.move?.to)
       if (moveResult.isCheck) {

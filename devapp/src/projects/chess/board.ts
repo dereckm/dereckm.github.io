@@ -6,6 +6,7 @@ import {
   checkRookMoves, checkQueenMoves, checkKingMoves,
   getAllLegalMoves
  } from './logic/move-generation/moves'
+import { SQUARE_INDEX } from "./constants/squares"
 
 const SEVEN = 7
 const NINE = 9
@@ -37,7 +38,7 @@ export default class ChessBoard {
 
   clone() {
     const b = new ChessBoard(this.save())
-    b._history = this._history
+    b._history = [...this._history]
     return b
   }
 
@@ -123,7 +124,7 @@ export default class ChessBoard {
 
   isCheck(kingPos: Int64, color: Color) {
     var oppositeColor: Color = this.flipColor(color)
-    const pawnAttacks: Int64 = color === 'white' 
+    let pawnAttacks: Int64 = color === 'white' 
       ? kingPos.shl(SEVEN).or(kingPos.shl(NINE)) 
       : kingPos.shr(SEVEN).or(kingPos.shr(NINE))
     const bishopMoves = checkBishopMoves(this, kingPos, color)
@@ -269,30 +270,6 @@ export default class ChessBoard {
     return indexes
   }
 
-  print() {
-    const view = this.toBoardView()
-    let text = ''
-    for(let i = 0; i < view.length; i++) {
-      text += view[i].map(sq => {
-        if (sq.piece == null) return '*'
-        if (sq.color === 'black') return sq.piece?.toLowerCase()
-        return sq.piece
-      }).join('')
-      text += '\n'
-    }
-    console.log(text)
-  }
-
-  printBitboard(board: Int64) {
-    const binary = board.toString(2).padStart(64, '0')
-    let text = ''
-    for(let i = 0; i < 8; i++) {
-      const row = binary.substring(i * 8, i * 8 + 8)
-      text += `${row}\n`
-    }
-    console.log(text)
-  }
-
   applyCastlingMove(toIndex: number) {
     if (toIndex === 1) {
       this._bitboards['white']['R'] = this._bitboards['white']['R'].xor(ONE)
@@ -309,6 +286,18 @@ export default class ChessBoard {
     }
   }
 
+  updateCastlingRights(from: number) {
+    if (this._hasWhiteKingSideCastleRight && (from === SQUARE_INDEX.h1 || from === SQUARE_INDEX.e1)) {
+      this._hasWhiteKingSideCastleRight = false;
+    } if (this._hasWhiteQueenSideCastleRight && (from === SQUARE_INDEX.e1 || from === SQUARE_INDEX.a1)) {
+      this._hasWhiteQueenSideCastleRight = false;
+    } if (this._hasBlackKingSideCastleRight && (from === SQUARE_INDEX.h8 || from === SQUARE_INDEX.e8)) {
+      this._hasBlackKingSideCastleRight = false;
+    } if (this._hasBlackQueenSideCastleRight && (from === SQUARE_INDEX.e8 || from === SQUARE_INDEX.a8)) {
+      this._hasBlackQueenSideCastleRight = false;
+    }
+  }
+
   applyMove(from: number, to: number): MoveResult {
 
     this._history.push(this.save())
@@ -317,7 +306,10 @@ export default class ChessBoard {
     const fromFlag = this.getFlag(from)
     const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
     const fromPiece = this.getPiece(fromFlag)
-    if (fromPiece == null) throw new Error(`Cannot find the piece to move at index: ${from}`)
+    if (fromPiece == null) {
+      debugger;
+      throw new Error(`Cannot find the piece to move at index: ${from}`)
+    }
     const toFlag = this.getFlag(to)
 
     if (fromPiece === 'K') {
@@ -327,15 +319,7 @@ export default class ChessBoard {
       }
     }
 
-    if (this._hasWhiteKingSideCastleRight && (from === 0 || from === 3)) {
-      this._hasWhiteKingSideCastleRight = false;
-    } if (this._hasWhiteQueenSideCastleRight && (from === 3 || from === 7)) {
-      this._hasWhiteQueenSideCastleRight = false;
-    } if (this._hasBlackKingSideCastleRight && (from === 56 || from === 59)) {
-      this._hasBlackKingSideCastleRight = false;
-    } if (this._hasBlackQueenSideCastleRight && (from === 59 || from === 63)) {
-      this._hasBlackQueenSideCastleRight = false;
-    }
+    this.updateCastlingRights(from)
     
     const toPiece = this.getPiece(toFlag)
     if (toPiece != null) {
@@ -389,8 +373,8 @@ export default class ChessBoard {
 
   isPromotion(toFlag: Int64, fromColor: Color, fromPiece: Piece) {
     if (fromPiece !== 'P') return false;
-    if (fromColor === 'white') return !toFlag.and(WHITE_PROMOTION_RANK).isZero()
-    return !toFlag.and(BLACK_PROMOTION_RANK).isZero()
+    if (fromColor === 'white') return this.hasPiece(WHITE_PROMOTION_RANK, toFlag)
+    return this.hasPiece(BLACK_PROMOTION_RANK, toFlag)
   }
 
   applyPromotion(position: number, piece: PromotablePiece) {

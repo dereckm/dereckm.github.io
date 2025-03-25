@@ -37,7 +37,12 @@ export function calculateScoreOfColor(board: ChessBoard, color: Color) {
     return scoreOfColor
 }
 
-export function calculateScoreDelta(board: ChessBoard) {
+export function calculateScoreDelta(color: Color, board: ChessBoard) {
+    if (color === 'white') return calculateScoreOfColor(board, 'white') - calculateScoreOfColor(board, 'black')
+    return calculateScoreOfColor(board, 'black') - calculateScoreOfColor(board, 'white')
+}
+
+export function calculateOverallScoreDelta(board: ChessBoard) {
     return calculateScoreOfColor(board, 'white') - calculateScoreOfColor(board, 'black')
 }
 

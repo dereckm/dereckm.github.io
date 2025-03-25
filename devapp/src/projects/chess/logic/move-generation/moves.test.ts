@@ -2,7 +2,7 @@ import ChessBoard from "../../board"
 import { getAllLegalMoves, generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves } from "./moves"
 import Int64, { ONE } from "../../../../logic/Int64"
 import { DEFAULT_BOARD } from "../../constants/fen"
-import { SQUARES } from "../../constants/squares"
+import { SQUARE_FLAGS } from "../../constants/squares"
 
 // TODO : something about this position corrupts the board
 test('should not try to move piece that does not exist', () => {
@@ -189,69 +189,69 @@ describe('checkPawnMoves', () => {
     });
   
     test('White pawn moves one square forward', () => {
-      const flag = SQUARES.e2; // Pawn on e2
+      const flag = SQUARE_FLAGS.e2; // Pawn on e2
       board = new ChessBoard('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'white');
-      expect(moves.isBitSet(SQUARES.e3.log2())).toBe(true); // Expect move to e3
+      expect(moves.isBitSet(SQUARE_FLAGS.e3.log2())).toBe(true); // Expect move to e3
     });
   
     test('White pawn moves two squares from start', () => {
-      const flag = SQUARES.e2; // Pawn on e2
+      const flag = SQUARE_FLAGS.e2; // Pawn on e2
       board = new ChessBoard('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'white');
-      expect(moves.isBitSet(SQUARES.e4.log2())).toBe(true); // e4 (if not blocked)
+      expect(moves.isBitSet(SQUARE_FLAGS.e4.log2())).toBe(true); // e4 (if not blocked)
     });
   
     test('White pawn is blocked and cannot move', () => {
-      const flag = SQUARES.e2; // Pawn on e2
+      const flag = SQUARE_FLAGS.e2; // Pawn on e2
       board = new ChessBoard('rnbqkbnr/pppppppp/8/8/8/4p3/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'white');
       expect(moves.isZero()).toBe(true);
     });
   
     test('White pawn captures diagonally', () => {
-      const flag = SQUARES.e2; // Pawn on e2
+      const flag = SQUARE_FLAGS.e2; // Pawn on e2
       board = new ChessBoard('rnbqkbnr/pppppppp/8/8/8/3p1p2/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'white');
-      expect(moves.isBitSet(SQUARES.f3.log2())).toBe(true); // Capture f3
-      expect(moves.isBitSet(SQUARES.d3.log2())).toBe(true); // Capture d3
+      expect(moves.isBitSet(SQUARE_FLAGS.f3.log2())).toBe(true); // Capture f3
+      expect(moves.isBitSet(SQUARE_FLAGS.d3.log2())).toBe(true); // Capture d3
     });
   
     test('Black pawn moves one square forward', () => {
-      const flag = SQUARES.e7; // Pawn on e7
+      const flag = SQUARE_FLAGS.e7; // Pawn on e7
       board = new ChessBoard(DEFAULT_BOARD)
       const moves = checkPawnMoves(board, flag, 'black');
-      expect(moves.isBitSet(SQUARES.e6.log2())).toBe(true); // e6
+      expect(moves.isBitSet(SQUARE_FLAGS.e6.log2())).toBe(true); // e6
     });
   
     test('Black pawn moves two squares from start', () => {
-      const flag = SQUARES.e7; // Pawn on e7
+      const flag = SQUARE_FLAGS.e7; // Pawn on e7
       board = new ChessBoard(DEFAULT_BOARD)
       const moves = checkPawnMoves(board, flag, 'black');
-      expect(moves.isBitSet(SQUARES.e6.log2())).toBe(true); // e6
-      expect(moves.isBitSet(SQUARES.e5.log2())).toBe(true); // e5 (if not blocked)
+      expect(moves.isBitSet(SQUARE_FLAGS.e6.log2())).toBe(true); // e6
+      expect(moves.isBitSet(SQUARE_FLAGS.e5.log2())).toBe(true); // e5 (if not blocked)
     });
   
     test('Black pawn is blocked and cannot move', () => {
-      const flag = SQUARES.e7; // Pawn on e7
+      const flag = SQUARE_FLAGS.e7; // Pawn on e7
       board = new ChessBoard('rnbqkbnr/pppppppp/4P3/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'black');
       expect(moves.isZero()).toBe(true);
     });
   
     test('Black pawn captures diagonally', () => {
-      const flag = SQUARES.e7; // Pawn on e7
+      const flag = SQUARE_FLAGS.e7; // Pawn on e7
       board = new ChessBoard('rnbqkbnr/pppppppp/3P1P2/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 2')
       const moves = checkPawnMoves(board, flag, 'black');
-      expect(moves.isBitSet(SQUARES.d6.log2())).toBe(true); // Capture d6
-      expect(moves.isBitSet(SQUARES.f6.log2())).toBe(true); // Capture f6
+      expect(moves.isBitSet(SQUARE_FLAGS.d6.log2())).toBe(true); // Capture d6
+      expect(moves.isBitSet(SQUARE_FLAGS.f6.log2())).toBe(true); // Capture f6
     });
   
     test('Pawn does not capture empty diagonal squares', () => {
-      const flag = SQUARES.e2; // Pawn on e2
+      const flag = SQUARE_FLAGS.e2; // Pawn on e2
       board = new ChessBoard(DEFAULT_BOARD)
       const moves = checkPawnMoves(board, flag, 'white');
-      expect(moves.isBitSet(SQUARES.f3.log2())).toBe(false); // No piece to capture on f3
-      expect(moves.isBitSet(SQUARES.d3.log2())).toBe(false); // No piece to capture on d3
+      expect(moves.isBitSet(SQUARE_FLAGS.f3.log2())).toBe(false); // No piece to capture on f3
+      expect(moves.isBitSet(SQUARE_FLAGS.d3.log2())).toBe(false); // No piece to capture on d3
     });
   });
