@@ -1,4 +1,5 @@
 import ChessBoard from './board'
+import { SQUARE_INDEX } from './constants/squares'
 
 test('should allow blocking check with knight', () => {
     const board = setUp('rbn1knbr/pp1ppppp/8/2p5/4P3/1NqPN3/P1P2PPP/RB1QK1BR w KQkq')
@@ -80,6 +81,28 @@ test('should apply white queen-side castling correctly', () => {
     const newState = board.save()
     expect(newState).toBe('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/2KR3R b k')
 })
+
+test('should allow black king-side castling', () => {
+  const board = new ChessBoard('rnbqk2r/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR b KQkq')
+  const moves = board.getMoveIndexes(SQUARE_INDEX.e8)
+  expect(moves.length).toBe(3)
+  expect(moves).toContain(SQUARE_INDEX.g8)  
+})
+
+test('should allow black king-side castling correctly', () => {
+    const board = new ChessBoard('rnbqk2r/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR b KQkq')
+    const moves = board.getMoveIndexes(SQUARE_INDEX.e8)
+    board.applyMove(SQUARE_INDEX.e8, SQUARE_INDEX.g8)
+    const newState = board.save()
+    expect(newState).toBe('rnbq1rk1/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR w KQ')
+  })
+
+  test('should allow black queen-side castling', () => {
+    const board = new ChessBoard('r3kbnr/pppqpppp/2np4/5b2/8/1PPPPP2/P5PP/RNBQKBNR b KQkq')
+    const moves = board.getMoveIndexes(SQUARE_INDEX.e8)
+    expect(moves.length).toBe(2)
+    expect(moves).toContain(SQUARE_INDEX.c8)  
+  })
 
 
 //TODO : Make sure black can castle as well

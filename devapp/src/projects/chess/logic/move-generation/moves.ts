@@ -2,6 +2,7 @@ import Int64, { ONE, ZERO } from '../../../../logic/Int64';
 import { Color } from '../../models/Piece'
 import ChessBoard from '../../board';
 import { Piece } from '../../models/Piece'
+import { SQUARE_FLAGS, SQUARE_INDEX } from '../../constants/squares';
 
 
 const knightMoves = generateKnightMoves()
@@ -143,18 +144,18 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
     let moves = kingMoves[index]
     const pieces = board.getAllPieces()
     if (color === 'white') {
-        if (board._hasWhiteKingSideCastleRight && !pieces.isBitSet(1) && !pieces.isBitSet(2)) {
-            moves = moves.or(ONE.shl(1))
+        if (board._hasWhiteKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f1) && !pieces.isBitSet(SQUARE_INDEX.g1)) {
+            moves = moves.or(SQUARE_FLAGS.g1)
         } 
-        if (board._hasWhiteQueenSideCastleRight && !pieces.isBitSet(4) && !pieces.isBitSet(5) && !pieces.isBitSet(6)) {
-            moves = moves.or(ONE.shl(5))
+        if (board._hasWhiteQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b1) && !pieces.isBitSet(SQUARE_INDEX.c1) && !pieces.isBitSet(SQUARE_INDEX.d1)) {
+            moves = moves.or(SQUARE_FLAGS.c1)
         }
     } else if (color === 'black') {
-        if (board._hasBlackKingSideCastleRight && !pieces.isBitSet(56) && !pieces.isBitSet(57)) {
-            moves = moves.or(ONE.shl(57))
+        if (board._hasBlackKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f8) && !pieces.isBitSet(SQUARE_INDEX.g8)) {
+            moves = moves.or(SQUARE_FLAGS.g8)
         } 
-        if (board._hasBlackQueenSideCastleRight && !pieces.isBitSet(61) && !pieces.isBitSet(60)) {
-            moves = moves.or(ONE.shl(60))
+        if (board._hasBlackQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b8) && !pieces.isBitSet(SQUARE_INDEX.c8) && !pieces.isBitSet(SQUARE_INDEX.d8)) {
+            moves = moves.or(SQUARE_FLAGS.c8)
         }
     }
     const stepOvers = board.getPiecesForColor(color)
