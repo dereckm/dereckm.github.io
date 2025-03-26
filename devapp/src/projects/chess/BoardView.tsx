@@ -22,7 +22,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
+  const [board, setBoard] = useState(new ChessBoard('rnbqkbnr/pp1p1ppp/2p5/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 0 2'))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
@@ -48,16 +48,14 @@ export const Board = () => {
         setBoard(clone)
 
         if (isBotActive) {
-          setTimeout(() => {
-            const result = engine.findDeepeningOptimalMove(clone, 'black', 500)
-            if (result.move) {
-              const moveResult = clone.applyMove(result.move?.from, result.move?.to)
-              if (moveResult.isCheck) {
-                checkSound.play()
-              }
-              setBoard(clone.clone())
+          const result = engine.findDeepeningOptimalMove(clone, 'black', 500)
+          if (result.move) {
+            const moveResult = clone.applyMove(result.move?.from, result.move?.to)
+            if (moveResult.isCheck) {
+              checkSound.play()
             }
-          }, 100)
+            setBoard(clone.clone())
+          }
         }
       }
       setSelectedIndex(null)

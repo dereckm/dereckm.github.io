@@ -222,8 +222,24 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
         validMoves = validMoves.or(getPawnForwardMoves(board, flag, BLACK_PAWN_START, false));
         validMoves = validMoves.or(getPawnCaptureMoves(board, flag, x, 'white', false));
     }
+
+    validMoves = validMoves.or(checkEnPassant(flag, board, color))
     
     return validMoves;
+}
+
+function checkEnPassant(flag: Int64, board: ChessBoard, color: Color): Int64 {
+    if (board._enPassantTargetSquare != null) {
+        if (color === 'black') {
+            const whitePawns = board._bitboards['white']['P']
+            if (board.hasPiece(whitePawns, board._enPassantTargetSquare.shr(7)) || board.hasPiece(whitePawns, board._enPassantTargetSquare.shr(9)))
+                return board._enPassantTargetSquare
+        } else {
+            if (flag.equals(board._enPassantTargetSquare.shr(7)) || flag.equals(board._enPassantTargetSquare.shr(9)))
+                return board._enPassantTargetSquare
+        }
+    }
+    return ZERO
 }
 
 function getPawnForwardMoves(board: ChessBoard, flag: Int64, startPosition: Int64, isWhite: boolean): Int64 {
