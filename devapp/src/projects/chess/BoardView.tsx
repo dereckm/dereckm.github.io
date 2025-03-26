@@ -5,7 +5,6 @@ import { Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
-import { calculateScoreDelta } from './logic/scoring-heuristics/scoring'
 import { DEFAULT_BOARD } from './constants/fen'
 
 const checkSound = new Audio('move-check.mp3')
@@ -22,7 +21,7 @@ const iconsLookup: Record<Piece, JSX.Element> = {
 const engine = new Engine()
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard('rnbqkbnr/pp1p1ppp/2p5/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 0 2'))
+  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
@@ -125,11 +124,6 @@ export const Board = () => {
           </div>
         )
       }
-        <div className={styles['move-history']}>
-          <div className={styles['move-history-content']}>
-          {history.map((notation, i) => (<div key={`${notation}+${i}`}>{i}. {notation}</div>))}
-          </div>
-        </div>
       </div>
       <div className={styles['chessboard-controls']}>
           <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Undo</button>
@@ -149,7 +143,7 @@ export const Board = () => {
 const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves: number[], onClick: (j: number) => void }) => {
   return (
     <div key={i} className={styles.row}>
-      <span style={{ alignSelf: 'center', padding: '4px' }}>{8 - i}</span>
+      <span style={{ alignSelf: 'center', padding: '4px', color: '#FFF' }}>{8 - i}</span>
       {row.map((square, j) => {
         const pieceStyle = square.color === 'black' ? styles.black : styles.white;
         const squareStyle = `${styles.square} ${((j + i) % 2) === 0 ? styles["square-white"] : styles["square-black"] }`
@@ -157,8 +151,18 @@ const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves:
         if (moves.includes(square.index)) {
             style += ` ${styles['candidate-move']}`
         }
-        return <div key={`${i}_${j}`} onClick={() => onClick(square.index)} className={style}><span>{square.piece != null ? iconsLookup[square.piece] : ""}</span></div>
+        return (
+        <div key={`${i}_${j}`} onClick={() => onClick(square.index)} className={style}>
+          <span style={{padding: '8px'}}>{square.piece != null ? iconsLookup[square.piece] : <EmptySquare />}</span>
+        </div>
+      )
       })}
     </div>
   )
+}
+
+const EmptySquare = () => {
+  return (
+    <div style={{width: '24px', height: '24px'}}/>
+    )
 }
