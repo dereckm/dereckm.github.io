@@ -51,6 +51,11 @@ export default class Int64 {
     and(other: Int64) {
       return new Int64(this.low & other.low, this.high & other.high);
     }
+
+    set(low: number, high: number) {
+      this.low = low;
+      this.high = high;
+    }
   
     // Bitwise OR
     or(other: Int64) {

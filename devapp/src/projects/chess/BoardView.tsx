@@ -33,7 +33,7 @@ export const Board = () => {
     if (selectedIndex === null) {
       setSelectedIndex(targetIndex)
     } else {
-      const legalMoves = board.getMoveIndexes(selectedIndex)
+      const legalMoves = board.getMoveIndexesFromIndex(selectedIndex)
       if (legalMoves.includes(targetIndex)) {
         const moveResult = board.applyMove(selectedIndex, targetIndex)
         if (moveResult.isCheck) {
@@ -63,7 +63,7 @@ export const Board = () => {
 
   useEffect(() => {
     if (selectedIndex != null) {
-      setPossibleMoves(board.getMoveIndexes(selectedIndex))
+      setPossibleMoves(board.getMoveIndexesFromIndex(selectedIndex))
     } else {
       setPossibleMoves([])
     }

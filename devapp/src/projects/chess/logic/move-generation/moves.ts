@@ -285,7 +285,7 @@ function getPawnCaptureMoves(board: ChessBoard, flag: Int64, x: number, opponent
           if (board.hasPiece(pieces, flag)) {
               const piece = board.getPiece(flag)
               if (piece != null) {
-                const toIndexes = board.getMoveIndexes(i)
+                const toIndexes = board.getMoveIndexes(i, pieces)
                 for(const toIndex of toIndexes) {
                   const toFlag = board.getFlag(toIndex)
                   const isCapture = board.hasPiece(oppositePieces, toFlag)

@@ -7,7 +7,7 @@ import {
   getAllLegalMoves
  } from './logic/move-generation/moves'
 import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_INDEX } from "./constants/squares"
-import { Board } from "./BoardView"
+import { charToPiece, getInteger } from "./utilities/fast-casting"
 
 const SEVEN = 7
 const NINE = 9
@@ -50,12 +50,13 @@ export default class ChessBoard {
   save() {
     let fen = ''
     let count = 0;
+    const whitePieces = this.getPiecesForColor('white')
     for(let i = 63; i >= 0; i--) {
       const flag = this.getFlag(i)
       const piece = this.getPiece(flag)
       
       if (piece != null) {
-        const color = this.getColor(flag)
+        const color = this.hasPiece(whitePieces, flag) ? 'white' : 'black'
         if (count !== 0) fen += count;
         fen += color === 'white' ? piece : piece.toLowerCase()
         count = 0;
@@ -89,34 +90,19 @@ export default class ChessBoard {
     return fen
   }
 
-  getInteger(char: string) {
-    switch(char) {
-      case '1': return 1;
-      case '2': return 2;
-      case '3': return 3;
-      case '4': return 4;
-      case '5': return 5;
-      case '6': return 6;
-      case '7': return 7;
-      case '8': return 8;
-      default: return -1;
-    }
-  }
-
   loadAll(fen: string) {
     const chunks = fen.split(' ')
     const pieces = chunks[0]
     this._bitboards['white'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
     this._bitboards['black'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
     let index = 0;
-    for (let i = 0; i < pieces.length; i++) {
-      const char = pieces[i]
+    for (const char of pieces) {
       if (char === '/') continue;
-      const number = this.getInteger(char)
+      const number = getInteger(char)
       if (number !== NOT_NUMBER) {
         index += number;
       } else if (char === char.toLowerCase()) {
-        const piece: Piece = char.toUpperCase() as Piece
+        const piece = charToPiece(char)
         const flag = this.getFlag(63 - index)
         this._bitboards['black'][piece] = this._bitboards['black'][piece].or(flag)
         index += 1;
@@ -180,11 +166,11 @@ export default class ChessBoard {
     return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
   }
 
-  checkMoves(index: number) {
+  checkMoves(index: number, piecesForColor: Int64) {
     const flag = this.getFlag(index)
     const color = this._turn
     const piece = this.getPiece(flag)
-    if (!this.hasPiece(this.getPiecesForColor(color), flag)) return ZERO
+    if (!this.hasPiece(piecesForColor, flag)) return ZERO
     let moves = ZERO
     if (piece === 'P') moves = checkPawnMoves(this, flag, color)
     else if (piece === 'N') moves =  checkKnightMoves(this, flag, color)
@@ -287,8 +273,16 @@ export default class ChessBoard {
     return ZERO
   }
 
-  getMoveIndexes(index: number) {
-    const moves = this.checkMoves(index)
+  getMoveIndexesFromIndex(index: number) {
+    const whitePieces = this.getPiecesForColor('white')
+    const fromFlag = this.getFlag(index)
+    const color: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
+    const pieces = color === 'white' ? whitePieces : this.getPiecesForColor('black')
+    return this.getMoveIndexes(index, pieces)
+  }
+
+  getMoveIndexes(index: number, piecesForColor: Int64) {
+    const moves = this.checkMoves(index, piecesForColor)
     const indexes = []
     for (let i = 0; i < 64; i++) {
       const toFlag = this.getFlag(i)
@@ -467,13 +461,19 @@ export default class ChessBoard {
   }
 
   getPiece(flag: Int64): Piece | null {
-    if (this.hasPiece(this._bitboards['white']['P'].or(this._bitboards['black']['P']), flag)) return 'P'
-    if (this.hasPiece(this._bitboards['white']['N'].or(this._bitboards['black']['N']), flag)) return 'N'
-    if (this.hasPiece(this._bitboards['white']['B'].or(this._bitboards['black']['B']), flag)) return 'B'
-    if (this.hasPiece(this._bitboards['white']['R'].or(this._bitboards['black']['R']), flag)) return 'R'
-    if (this.hasPiece(this._bitboards['white']['Q'].or(this._bitboards['black']['Q']), flag)) return 'Q'
-    if (this.hasPiece(this._bitboards['white']['K'].or(this._bitboards['black']['K']), flag)) return 'K'
+    const whitePieces = this._bitboards['white']
+    const blackPieces = this._bitboards['black']
+    if (this.hasPiece(whitePieces['P'], flag) || this.hasPiece(blackPieces['P'], flag)) return 'P'
+    if (this.hasPiece(whitePieces['N'], flag) || this.hasPiece(blackPieces['N'], flag)) return 'N'
+    if (this.hasPiece(whitePieces['B'], flag) || this.hasPiece(blackPieces['B'], flag)) return 'B'
+    if (this.hasPiece(whitePieces['R'], flag) || this.hasPiece(blackPieces['R'], flag)) return 'R'
+    if (this.hasPiece(whitePieces['Q'], flag) || this.hasPiece(blackPieces['Q'], flag)) return 'Q'
+    if (this.hasPiece(whitePieces['K'], flag) || this.hasPiece(blackPieces['K'], flag)) return 'K'
     return null
+  }
+
+  hasPiecePooled(bitboard: Int64, pos: Int64) {
+
   }
 
   hasPiece(bitboard: Int64, pos: Int64) {
