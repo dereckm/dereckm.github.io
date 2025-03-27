@@ -5,11 +5,11 @@ export function calculatePiecesScore(board: ChessBoard, color: Color) {
     let score = 0
     for(let i = 0; i < 64; i++) {
         const flag = board.getFlag(i)
-        if (board.hasPiece(board._bitboards[color]['P'], flag)) score += 1;
-        else if (board.hasPiece(board._bitboards[color]['N'], flag)) score += 3;
-        else if (board.hasPiece(board._bitboards[color]['B'], flag)) score += 3;
-        else if (board.hasPiece(board._bitboards[color]['R'], flag)) score += 5;
-        else if (board.hasPiece(board._bitboards[color]['Q'], flag)) score += 9;
+        if (board.hasPiece(board._data._bitboards[color]['P'], flag)) score += 1;
+        else if (board.hasPiece(board._data._bitboards[color]['N'], flag)) score += 3;
+        else if (board.hasPiece(board._data._bitboards[color]['B'], flag)) score += 3;
+        else if (board.hasPiece(board._data._bitboards[color]['R'], flag)) score += 5;
+        else if (board.hasPiece(board._data._bitboards[color]['Q'], flag)) score += 9;
     }
     return score
 }

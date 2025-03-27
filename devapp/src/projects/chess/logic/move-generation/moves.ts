@@ -109,11 +109,8 @@ export function getMoveIndexesFromFlag(flag: Int64) {
     return indexes;
 }
 
-function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: Int64[], directions: ((i: number) => Int64)[]) {
+function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64, edges: Int64[], directions: ((i: number) => Int64)[]) {
     let moves = ZERO
-    const sameColorPieces = board.getPiecesForColor(color)
-    const oppositeColor = board.flipColor(color)
-    const oppositePieces = board.getPiecesForColor(oppositeColor)
     for(let direction = 0; direction < directions.length; direction++) {
         const edge = edges[direction]
         if (board.hasPiece(edge, flag)) // we're already at the edge
@@ -125,11 +122,11 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, color: Color, edges: In
             if (!isInBounds([coords.x, coords.y])) {
                 break;
             }
-            if (board.hasPiece(sameColorPieces, pos)) {
+            if (board.hasPiece(piecesForColor, pos)) {
                 break
             }
             moves = moves.or(pos)
-            if (board.hasPiece(edge, pos) || board.hasPiece(oppositePieces, pos)) {
+            if (board.hasPiece(edge, pos) || board.hasPiece(oppositeColorPieces, pos)) {
                 break
             }
         }
@@ -144,17 +141,17 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
     let moves = kingMoves[index]
     const pieces = board.getAllPieces()
     if (color === 'white') {
-        if (board._hasWhiteKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f1) && !pieces.isBitSet(SQUARE_INDEX.g1)) {
+        if (board._data._hasWhiteKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f1) && !pieces.isBitSet(SQUARE_INDEX.g1)) {
             moves = moves.or(SQUARE_FLAGS.g1)
         } 
-        if (board._hasWhiteQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b1) && !pieces.isBitSet(SQUARE_INDEX.c1) && !pieces.isBitSet(SQUARE_INDEX.d1)) {
+        if (board._data._hasWhiteQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b1) && !pieces.isBitSet(SQUARE_INDEX.c1) && !pieces.isBitSet(SQUARE_INDEX.d1)) {
             moves = moves.or(SQUARE_FLAGS.c1)
         }
     } else if (color === 'black') {
-        if (board._hasBlackKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f8) && !pieces.isBitSet(SQUARE_INDEX.g8)) {
+        if (board._data._hasBlackKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f8) && !pieces.isBitSet(SQUARE_INDEX.g8)) {
             moves = moves.or(SQUARE_FLAGS.g8)
         } 
-        if (board._hasBlackQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b8) && !pieces.isBitSet(SQUARE_INDEX.c8) && !pieces.isBitSet(SQUARE_INDEX.d8)) {
+        if (board._data._hasBlackQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b8) && !pieces.isBitSet(SQUARE_INDEX.c8) && !pieces.isBitSet(SQUARE_INDEX.d8)) {
             moves = moves.or(SQUARE_FLAGS.c8)
         }
     }
@@ -166,7 +163,7 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
   }
 
 
-export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
+export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
     const directions = [
       (i: number) => flag.shl(i * 8),
       (i: number) => flag.shr(i * 1),
@@ -177,20 +174,20 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
       (i: number) => flag.shr(i * 7),
       (i: number) => flag.shr(i * 9)
      ]
-     return checkRangeMoves(board, flag, color, queenEdges, directions)
+     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, queenEdges, directions)
   }
 
-  export function checkRookMoves(board: ChessBoard, flag: Int64, color: Color) {
+  export function checkRookMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
     const directions = [
       (i: number) => flag.shl(i * 8),
       (i: number) => flag.shr(i * 1),
       (i: number) => flag.shr(i * 8),
       (i: number) => flag.shl(i * 1)
      ]
-     return checkRangeMoves(board, flag, color, rookEdges, directions)
+     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, rookEdges, directions)
   }
 
-  export function checkBishopMoves(board: ChessBoard, flag: Int64, color: Color) {
+  export function checkBishopMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
     const directions = [
       (i: number) => flag.shl(i * 9),
       (i: number) => flag.shl(i * 7),
@@ -198,7 +195,7 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
       (i: number) => flag.shr(i * 9)
      ]
 
-     return checkRangeMoves(board, flag, color, bishopEdges, directions)
+     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, bishopEdges, directions)
   }
 
   export function checkKnightMoves(board: ChessBoard, flag: Int64, color: Color) {
@@ -229,14 +226,14 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, color: Color) {
 }
 
 function checkEnPassant(flag: Int64, board: ChessBoard, color: Color): Int64 {
-    if (board._enPassantTargetSquare != null) {
+    if (board._data._enPassantTargetSquare != null) {
         if (color === 'black') {
-            const whitePawns = board._bitboards['white']['P']
-            if (board.hasPiece(whitePawns, board._enPassantTargetSquare.shr(7)) || board.hasPiece(whitePawns, board._enPassantTargetSquare.shr(9)))
-                return board._enPassantTargetSquare
+            const whitePawns = board._data._bitboards['white']['P']
+            if (board.hasPiece(whitePawns, board._data._enPassantTargetSquare.shr(7)) || board.hasPiece(whitePawns, board._data._enPassantTargetSquare.shr(9)))
+                return board._data._enPassantTargetSquare
         } else {
-            if (flag.equals(board._enPassantTargetSquare.shr(7)) || flag.equals(board._enPassantTargetSquare.shr(9)))
-                return board._enPassantTargetSquare
+            if (flag.equals(board._data._enPassantTargetSquare.shr(7)) || flag.equals(board._data._enPassantTargetSquare.shr(9)))
+                return board._data._enPassantTargetSquare
         }
     }
     return ZERO
@@ -285,7 +282,7 @@ function getPawnCaptureMoves(board: ChessBoard, flag: Int64, x: number, opponent
           if (board.hasPiece(pieces, flag)) {
               const piece = board.getPiece(flag)
               if (piece != null) {
-                const toIndexes = board.getMoveIndexes(i, pieces)
+                const toIndexes = board.getMoveIndexes(i, pieces, oppositePieces)
                 for(const toIndex of toIndexes) {
                   const toFlag = board.getFlag(toIndex)
                   const isCapture = board.hasPiece(oppositePieces, toFlag)

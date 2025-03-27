@@ -79,7 +79,7 @@ export const Board = () => {
   }
 
   const handleNextClick = () => {
-    const result = engine.findDeepeningOptimalMove(board, board._turn, 500)
+    const result = engine.findDeepeningOptimalMove(board, board._data._turn, 500)
     debugger;
     if (result.move) {
       const moveResult = board.applyMove(result.move?.from, result.move?.to)

@@ -7,11 +7,13 @@ import {
   getAllLegalMoves
  } from './logic/move-generation/moves'
 import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_INDEX } from "./constants/squares"
-import { charToPiece, getInteger } from "./utilities/fast-casting"
+import { FENParser } from "./utilities/parse-fen"
+import { BoardModel } from "./models/BoardModel"
+
+const fenParser = new FENParser()
 
 const SEVEN = 7
 const NINE = 9
-const NOT_NUMBER = -1;
 
 const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
 const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
@@ -20,26 +22,12 @@ const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
 export default class ChessBoard {
   _history: string[] = []
-
-  _turn: Color;
+  _data: BoardModel
   _isCheck: boolean = false
-  _enPassantTargetSquare: Int64 | null = null
-  _halfMoveClock: number = 0
-  _fullMoveNumber: number = 0
-
-  _bitboards: Record<Color, Record<Piece, Int64>>
 
   constructor(state: string) {
-    this._bitboards = {} as Record<Color, Record<Piece, Int64>>
-    this._turn = 'white'
-    this.loadAll(state)
+    this._data = fenParser.parseFEN(state)
   }
-
-  _hasBlackKingSideCastleRight = true;
-  _hasBlackQueenSideCastleRight = true;
-
-  _hasWhiteKingSideCastleRight = true;
-  _hasWhiteQueenSideCastleRight = true;
 
   clone() {
     const b = new ChessBoard(this.save())
@@ -70,57 +58,28 @@ export default class ChessBoard {
       }
     }
     if (count > 0 ) fen += count
-    fen += this._turn === 'white' ? ' w' : ' b'
+    fen += this._data._turn === 'white' ? ' w' : ' b'
     let castlingRights = ''
-    if (this._hasWhiteKingSideCastleRight) castlingRights += 'K'
-    if (this._hasWhiteQueenSideCastleRight) castlingRights += 'Q'
-    if (this._hasBlackKingSideCastleRight) castlingRights += 'k'
-    if (this._hasBlackQueenSideCastleRight) castlingRights += 'q'
+    if (this._data._hasWhiteKingSideCastleRight) castlingRights += 'K'
+    if (this._data._hasWhiteQueenSideCastleRight) castlingRights += 'Q'
+    if (this._data._hasBlackKingSideCastleRight) castlingRights += 'k'
+    if (this._data._hasBlackQueenSideCastleRight) castlingRights += 'q'
     if (castlingRights === '') castlingRights = '-'
     fen += ` ${castlingRights}`
 
-    if (this._enPassantTargetSquare != null) {
-      fen += ` ${INDEX_TO_SQUARE[this._enPassantTargetSquare.log2()]}`
+    if (this._data._enPassantTargetSquare != null) {
+      fen += ` ${INDEX_TO_SQUARE[this._data._enPassantTargetSquare.log2()]}`
     } else {
       fen += ' -'
     }
-    fen += ` ${this._halfMoveClock}`;
-    fen += ` ${this._fullMoveNumber}`
+    fen += ` ${this._data._halfMoveClock}`;
+    fen += ` ${this._data._fullMoveNumber}`
 
     return fen
   }
 
-  loadAll(fen: string) {
-    const chunks = fen.split(' ')
-    const pieces = chunks[0]
-    this._bitboards['white'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
-    this._bitboards['black'] = { P: ZERO, N: ZERO, B: ZERO, R: ZERO, Q: ZERO, K: ZERO } as Record<Piece, Int64>
-    let index = 0;
-    for (const char of pieces) {
-      if (char === '/') continue;
-      const number = getInteger(char)
-      if (number !== NOT_NUMBER) {
-        index += number;
-      } else if (char === char.toLowerCase()) {
-        const piece = charToPiece(char)
-        const flag = this.getFlag(63 - index)
-        this._bitboards['black'][piece] = this._bitboards['black'][piece].or(flag)
-        index += 1;
-      } else {
-        const piece: Piece = char as Piece
-        const flag = this.getFlag(63 - index)
-        this._bitboards['white'][piece] = this._bitboards['white'][piece].or(flag)
-        index += 1;
-      }
-    }
-    this._turn = chunks[1] === 'w' ? 'white' : 'black'
-    this._hasWhiteKingSideCastleRight = chunks[2].includes('K')
-    this._hasWhiteQueenSideCastleRight = chunks[2].includes('Q')
-    this._hasBlackKingSideCastleRight = chunks[2].includes('k')
-    this._hasBlackQueenSideCastleRight = chunks[2].includes('q')
-    this._enPassantTargetSquare = FLAGS_LOOKUP_INDEX[SQUARE_INDEX[chunks[3]]]
-    this._halfMoveClock = parseInt(chunks[4])
-    this._fullMoveNumber = parseInt(chunks[5])
+  parseTurn() {
+
   }
 
   toBinaryString(input: string, char: string) {
@@ -144,41 +103,43 @@ export default class ChessBoard {
     let pawnAttacks: Int64 = color === 'white' 
       ? kingPos.shl(SEVEN).or(kingPos.shl(NINE)) 
       : kingPos.shr(SEVEN).or(kingPos.shr(NINE))
-    const bishopMoves = checkBishopMoves(this, kingPos, color)
-    const rookMoves = checkRookMoves(this, kingPos, color)
-    return this.hasPiece(pawnAttacks, this._bitboards[oppositeColor]['P'])
-    || this.hasPiece(checkKnightMoves(this, kingPos, color), this._bitboards[oppositeColor]['N'])
-    || this.hasPiece(bishopMoves, this._bitboards[oppositeColor]['B'])
-    || this.hasPiece(rookMoves, this._bitboards[oppositeColor]['R'])
-    || this.hasPiece(bishopMoves.or(rookMoves), this._bitboards[oppositeColor]['Q'])
+    const sameColorPieces = this.getPiecesForColor(color)
+    const oppositeColorPieces = this.getPiecesForColor(this.flipColor(color))
+    const bishopMoves = checkBishopMoves(this, kingPos, oppositeColorPieces, sameColorPieces)
+    const rookMoves = checkRookMoves(this, kingPos,  oppositeColorPieces, sameColorPieces)
+    return this.hasPiece(pawnAttacks, this._data._bitboards[oppositeColor]['P'])
+    || this.hasPiece(checkKnightMoves(this, kingPos, color), this._data._bitboards[oppositeColor]['N'])
+    || this.hasPiece(bishopMoves, this._data._bitboards[oppositeColor]['B'])
+    || this.hasPiece(rookMoves, this._data._bitboards[oppositeColor]['R'])
+    || this.hasPiece(bishopMoves.or(rookMoves), this._data._bitboards[oppositeColor]['Q'])
   }
 
   getPiecesForColor(color: Color) {
-    return this._bitboards[color]['P']
-    .or(this._bitboards[color]['N'])
-    .or(this._bitboards[color]['B'])
-    .or(this._bitboards[color]['R'])
-    .or(this._bitboards[color]['Q'])
-    .or(this._bitboards[color]['K'])
+    return this._data._bitboards[color]['P']
+    .or(this._data._bitboards[color]['N'])
+    .or(this._data._bitboards[color]['B'])
+    .or(this._data._bitboards[color]['R'])
+    .or(this._data._bitboards[color]['Q'])
+    .or(this._data._bitboards[color]['K'])
   }
 
   getAllPieces() {
     return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
   }
 
-  checkMoves(index: number, piecesForColor: Int64) {
+  checkMoves(index: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
     const flag = this.getFlag(index)
-    const color = this._turn
+    const color = this._data._turn
     const piece = this.getPiece(flag)
-    if (!this.hasPiece(piecesForColor, flag)) return ZERO
+    if (!this.hasPiece(sameColorPieces, flag)) return ZERO
     let moves = ZERO
     if (piece === 'P') moves = checkPawnMoves(this, flag, color)
     else if (piece === 'N') moves =  checkKnightMoves(this, flag, color)
-    else if (piece === 'B') moves =  checkBishopMoves(this, flag, color)
-    else if (piece === 'R') moves =  checkRookMoves(this, flag, color)
-    else if (piece === 'Q') moves =  checkQueenMoves(this, flag, color)
+    else if (piece === 'B') moves =  checkBishopMoves(this, flag, oppositeColorPieces, sameColorPieces)
+    else if (piece === 'R') moves =  checkRookMoves(this, flag, oppositeColorPieces, sameColorPieces)
+    else if (piece === 'Q') moves =  checkQueenMoves(this, flag, oppositeColorPieces, sameColorPieces)
     else if (piece === 'K') moves = checkKingMoves(this, flag, color)
-    moves = this.checkMovesForCheck(moves, color, index)
+    moves = this.checkMovesForCheck(moves, color, index, sameColorPieces, oppositeColorPieces)
     return moves
   }
 
@@ -188,9 +149,9 @@ export default class ChessBoard {
    * @param color 
    * @returns lookup of positions that can cause check for each piece.
    */
-  getCheckingMoves(king: Int64, index: number, color: Color): Record<Piece, Int64> {
-    const bishopMoves = checkBishopMoves(this, king, color)
-    const rookMoves = checkRookMoves(this, king, color)
+  getCheckingMoves(king: Int64, index: number, color: Color, sameColorPieces: Int64, oppositeColorPieces: Int64): Record<Piece, Int64> {
+    const bishopMoves = checkBishopMoves(this, king, oppositeColorPieces, sameColorPieces)
+    const rookMoves = checkRookMoves(this, king, oppositeColorPieces, sameColorPieces)
     const kingMoves = checkKingMoves(this, king, color)
     const pawnMoves = this.checkPawnCapturesForCheck(king, color)
     return {
@@ -218,19 +179,21 @@ export default class ChessBoard {
     return moves
   }
 
-  checkMovesForCheck(moves: Int64, color: Color, index: number) {
+  checkMovesForCheck(moves: Int64, color: Color, index: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
     if (moves.isZero()) return moves
 
     const oppositeColor = this.flipColor(color)
-    const king = this._bitboards[color]['K']
-    let checkingMoves = this.getCheckingMoves(king, index, color)
+    const king = this._data._bitboards[color]['K']
+    let checkingMoves = this.getCheckingMoves(king, index, color, sameColorPieces, oppositeColorPieces)
     if (moves.isFlag()) return this.testMoveForCheck(
       index,
       moves.log2(),
       color,
       oppositeColor,
       moves,
-      checkingMoves
+      checkingMoves,
+      sameColorPieces,
+      oppositeColorPieces
     )
     let legalMoves = ZERO
     for(let moveIndex = 0; moveIndex < 64; moveIndex++) {
@@ -242,7 +205,9 @@ export default class ChessBoard {
           color,
           oppositeColor,
           currentMove,
-          checkingMoves
+          checkingMoves,
+          sameColorPieces,
+          oppositeColorPieces
         ))
       }
     }
@@ -255,17 +220,19 @@ export default class ChessBoard {
       color: Color,
       oppositeColor: Color,
       currentMove: Int64,
-      checkingMoves: Record<Piece, Int64>) {
+      checkingMoves: Record<Piece, Int64>,
+      sameColorPieces: Int64, 
+      oppositeColorPieces: Int64) {
     this.applyMove(index, moveIndex)
 
-    const newKing =  this._bitboards[color]['K']
-    checkingMoves = this.getCheckingMoves(newKing, index, color)
-    const isCheck = this.hasPiece(checkingMoves['P'], this._bitboards[oppositeColor]['P']) 
-      || this.hasPiece(checkingMoves['N'], this._bitboards[oppositeColor]['N'])
-      || this.hasPiece(checkingMoves['B'], this._bitboards[oppositeColor]['B'])
-      || this.hasPiece(checkingMoves['R'], this._bitboards[oppositeColor]['R'])
-      || this.hasPiece(checkingMoves['Q'], this._bitboards[oppositeColor]['Q'])
-      || this.hasPiece(checkingMoves['K'], this._bitboards[oppositeColor]['K'])
+    const newKing =  this._data._bitboards[color]['K']
+    checkingMoves = this.getCheckingMoves(newKing, index, color, sameColorPieces, oppositeColorPieces)
+    const isCheck = this.hasPiece(checkingMoves['P'], this._data._bitboards[oppositeColor]['P']) 
+      || this.hasPiece(checkingMoves['N'], this._data._bitboards[oppositeColor]['N'])
+      || this.hasPiece(checkingMoves['B'], this._data._bitboards[oppositeColor]['B'])
+      || this.hasPiece(checkingMoves['R'], this._data._bitboards[oppositeColor]['R'])
+      || this.hasPiece(checkingMoves['Q'], this._data._bitboards[oppositeColor]['Q'])
+      || this.hasPiece(checkingMoves['K'], this._data._bitboards[oppositeColor]['K'])
 
     this.undoMove()
 
@@ -278,11 +245,16 @@ export default class ChessBoard {
     const fromFlag = this.getFlag(index)
     const color: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
     const pieces = color === 'white' ? whitePieces : this.getPiecesForColor('black')
-    return this.getMoveIndexes(index, pieces)
+    const oppositePieces = color === 'white' ? this.getPiecesForColor('black') : whitePieces
+    return this.getMoveIndexes(index, pieces, oppositePieces)
   }
 
-  getMoveIndexes(index: number, piecesForColor: Int64) {
-    const moves = this.checkMoves(index, piecesForColor)
+  getMoveIndexesWithPieces() {
+
+  }
+
+  getMoveIndexes(index: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
+    const moves = this.checkMoves(index, sameColorPieces, oppositeColorPieces)
     const indexes = []
     for (let i = 0; i < 64; i++) {
       const toFlag = this.getFlag(i)
@@ -295,38 +267,38 @@ export default class ChessBoard {
 
   applyCastlingMove(toIndex: number) {
     if (toIndex === 1) {
-      this._bitboards['white']['R'] = this._bitboards['white']['R'].xor(ONE)
-      this._bitboards['white']['R'] = this._bitboards['white']['R'].or(this.getFlag(2))
+      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].xor(ONE)
+      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].or(this.getFlag(2))
     } else if (toIndex === 5) {
-      this._bitboards['white']['R'] = this._bitboards['white']['R'].xor(this.getFlag(7))
-      this._bitboards['white']['R'] = this._bitboards['white']['R'].or(this.getFlag(4))
+      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].xor(this.getFlag(7))
+      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].or(this.getFlag(4))
     } else if (toIndex === 57) {
-      this._bitboards['black']['R'] = this._bitboards['black']['R'].xor(this.getFlag(56))
-      this._bitboards['black']['R'] = this._bitboards['black']['R'].or(this.getFlag(58))
+      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].xor(this.getFlag(56))
+      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].or(this.getFlag(58))
     } else if (toIndex === 61) {
-      this._bitboards['black']['R'] = this._bitboards['black']['R'].xor(this.getFlag(63))
-      this._bitboards['black']['R'] = this._bitboards['black']['R'].or(this.getFlag(60))
+      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].xor(this.getFlag(63))
+      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].or(this.getFlag(60))
     }
   }
 
   updateCastlingRights(from: number) {
-    if (this._hasWhiteKingSideCastleRight && (from === SQUARE_INDEX.h1 || from === SQUARE_INDEX.e1)) {
-      this._hasWhiteKingSideCastleRight = false;
-    } if (this._hasWhiteQueenSideCastleRight && (from === SQUARE_INDEX.e1 || from === SQUARE_INDEX.a1)) {
-      this._hasWhiteQueenSideCastleRight = false;
-    } if (this._hasBlackKingSideCastleRight && (from === SQUARE_INDEX.h8 || from === SQUARE_INDEX.e8)) {
-      this._hasBlackKingSideCastleRight = false;
-    } if (this._hasBlackQueenSideCastleRight && (from === SQUARE_INDEX.e8 || from === SQUARE_INDEX.a8)) {
-      this._hasBlackQueenSideCastleRight = false;
+    if (this._data._hasWhiteKingSideCastleRight && (from === SQUARE_INDEX.h1 || from === SQUARE_INDEX.e1)) {
+      this._data._hasWhiteKingSideCastleRight = false;
+    } if (this._data._hasWhiteQueenSideCastleRight && (from === SQUARE_INDEX.e1 || from === SQUARE_INDEX.a1)) {
+      this._data._hasWhiteQueenSideCastleRight = false;
+    } if (this._data._hasBlackKingSideCastleRight && (from === SQUARE_INDEX.h8 || from === SQUARE_INDEX.e8)) {
+      this._data._hasBlackKingSideCastleRight = false;
+    } if (this._data._hasBlackQueenSideCastleRight && (from === SQUARE_INDEX.e8 || from === SQUARE_INDEX.a8)) {
+      this._data._hasBlackQueenSideCastleRight = false;
     }
   }
 
   applyEnPassant(to: number, color: Color) {
-    if (this._enPassantTargetSquare == null) return
-    if (color === 'white' && (!this._enPassantTargetSquare.shr(8).equals(this.getFlag(to)))) {
-      this._bitboards['black']['P'] =  this._bitboards['black']['P'].xor(this._enPassantTargetSquare.shr(8))
+    if (this._data._enPassantTargetSquare == null) return
+    if (color === 'white' && (!this._data._enPassantTargetSquare.shr(8).equals(this.getFlag(to)))) {
+      this._data._bitboards['black']['P'] =  this._data._bitboards['black']['P'].xor(this._data._enPassantTargetSquare.shr(8))
     } else {
-      this._bitboards['white']['P'] =  this._bitboards['white']['P'].xor(this._enPassantTargetSquare.shl(8))
+      this._data._bitboards['white']['P'] =  this._data._bitboards['white']['P'].xor(this._data._enPassantTargetSquare.shl(8))
     }
   }
 
@@ -334,21 +306,21 @@ export default class ChessBoard {
     if (fromPiece === 'P' && Math.abs(from - to) === 16) {
       const enPassantIndex = (from + to) / 2
       const toFlag = this.getFlag(to)
-      if (this._turn === 'white') {
-         const blackPawns = this._bitboards['black']['P']
+      if (this._data._turn === 'white') {
+         const blackPawns = this._data._bitboards['black']['P']
          const blackPawnsThatCouldCapture = toFlag.shr(1).or(toFlag.shl(1))
          if (this.hasPiece(blackPawns, blackPawnsThatCouldCapture)) {
-          this._enPassantTargetSquare = this.getFlag(enPassantIndex)
+          this._data._enPassantTargetSquare = this.getFlag(enPassantIndex)
          }
       } else {
-        const whitePawns = this._bitboards['white']['P']
+        const whitePawns = this._data._bitboards['white']['P']
         const whitePawnsThatCouldCapture = toFlag.shr(1).or(toFlag.shl(1))
         if (this.hasPiece(whitePawns, whitePawnsThatCouldCapture)) {
-          this._enPassantTargetSquare = this.getFlag(enPassantIndex)
+          this._data._enPassantTargetSquare = this.getFlag(enPassantIndex)
         }
       }
     } else {
-      this._enPassantTargetSquare = null;
+      this._data._enPassantTargetSquare = null;
     }
   }
 
@@ -386,23 +358,23 @@ export default class ChessBoard {
     }
 
     // Clear from position
-    this._bitboards[fromColor][fromPiece] =  this._bitboards[fromColor][fromPiece].xor(fromFlag)
+    this._data._bitboards[fromColor][fromPiece] =  this._data._bitboards[fromColor][fromPiece].xor(fromFlag)
       
     // Set board with new piece on to position
-    this._bitboards[fromColor][fromPiece] = this._bitboards[fromColor][fromPiece].or(toFlag)
-    this._turn = this.flipColor(this._turn)
+    this._data._bitboards[fromColor][fromPiece] = this._data._bitboards[fromColor][fromPiece].or(toFlag)
+    this._data._turn = this.flipColor(this._data._turn)
     
     const oppositeColor = this.flipColor(fromColor)
-    const oppositeKing = this._bitboards[oppositeColor]['K']
+    const oppositeKing = this._data._bitboards[oppositeColor]['K']
     const isCheck = this.isCheck(oppositeKing, oppositeColor)
 
-    if (this._turn === 'black')
-      this._fullMoveNumber++;
+    if (this._data._turn === 'black')
+      this._data._fullMoveNumber++;
 
     if (!isCapture && !isPawnMove) {
-      this._halfMoveClock++
+      this._data._halfMoveClock++
     } else {
-      this._halfMoveClock = 0
+      this._data._halfMoveClock = 0
     }
 
     return {
@@ -413,12 +385,12 @@ export default class ChessBoard {
   }
 
   isCheckmate() {
-    const blackKing = this._bitboards['black']['K']
+    const blackKing = this._data._bitboards['black']['K']
     if (this.isCheck(blackKing, 'black')) {
       const moves = getAllLegalMoves(this, 'black')
       if (moves.length === 0) return true;
     }
-    const whiteKing = this._bitboards['white']['K']
+    const whiteKing = this._data._bitboards['white']['K']
     if (this.isCheck(whiteKing, 'white')) {
       const moves = getAllLegalMoves(this, 'white')
       if (moves.length === 0) return true;
@@ -432,7 +404,7 @@ export default class ChessBoard {
 
   capturePiece(toPiece: Piece, toFlag: Int64) {
     const toColor: Color = this.getColor(toFlag)
-    this._bitboards[toColor][toPiece] = this._bitboards[toColor][toPiece].xor(toFlag)
+    this._data._bitboards[toColor][toPiece] = this._data._bitboards[toColor][toPiece].xor(toFlag)
   }
 
   isPromotion(toFlag: Int64, fromColor: Color, fromPiece: Piece) {
@@ -444,14 +416,14 @@ export default class ChessBoard {
   applyPromotion(position: number, piece: PromotablePiece) {
     const flag = this.getFlag(position)
     const color: Color = this.getColor(flag)
-    this._bitboards[color]['P'] = this._bitboards[color]['P'].xor(flag)
-    this._bitboards[color][piece] = this._bitboards[color][piece].or(flag)
+    this._data._bitboards[color]['P'] = this._data._bitboards[color]['P'].xor(flag)
+    this._data._bitboards[color][piece] = this._data._bitboards[color][piece].or(flag)
   }
 
   undoMove() {
     const lastState = this._history.pop()
     if (lastState) {
-      this.loadAll(lastState)
+      this._data = fenParser.parseFEN(lastState)
     }
     return lastState
   }
@@ -461,8 +433,8 @@ export default class ChessBoard {
   }
 
   getPiece(flag: Int64): Piece | null {
-    const whitePieces = this._bitboards['white']
-    const blackPieces = this._bitboards['black']
+    const whitePieces = this._data._bitboards['white']
+    const blackPieces = this._data._bitboards['black']
     if (this.hasPiece(whitePieces['P'], flag) || this.hasPiece(blackPieces['P'], flag)) return 'P'
     if (this.hasPiece(whitePieces['N'], flag) || this.hasPiece(blackPieces['N'], flag)) return 'N'
     if (this.hasPiece(whitePieces['B'], flag) || this.hasPiece(blackPieces['B'], flag)) return 'B'
@@ -472,12 +444,8 @@ export default class ChessBoard {
     return null
   }
 
-  hasPiecePooled(bitboard: Int64, pos: Int64) {
-
-  }
-
   hasPiece(bitboard: Int64, pos: Int64) {
-    return !(bitboard.and(pos).isZero())
+    return !((bitboard.low & pos.low) === 0 && (bitboard.high & pos.high) === 0) // Avoid using Int64 ops that create objs when just checking something bool
   }
 
   toNotation(fromIndex: number, toIndex: number) {
