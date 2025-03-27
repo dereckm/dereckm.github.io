@@ -1,16 +1,15 @@
 import ChessBoard from "./board";
 import { Color, PromotablePiece } from './models/Piece';
-import { calculateScoreDelta, calculateOverallScoreDelta } from "./logic/scoring-heuristics/scoring";
+import { calculateOverallScoreDelta } from "./logic/scoring-heuristics/scoring";
 import { getAllLegalMoves, CandidateMove } from "./logic/move-generation/moves";
 
-const TIMEOUT_MS = 500;
+const TIMEOUT_MS = 1000;
 
 interface ScoredMove {
     move: CandidateMove | null;
     score: number;
 }
 
-const enableAlphaBetaPruning = true;
 const promotionMoves: PromotablePiece[] = ['N', 'B', 'R', 'Q'];
 
 export default class Engine {
@@ -29,17 +28,17 @@ export default class Engine {
         this._timer = Date.now();
         this._exploredPaths = 0;
         this._prunedNodes = 0;
-        let depth = 4
+        let depth = 1
         let bestScore = color === 'white' ? -Infinity : Infinity
         let bestMove: CandidateMove | null = null
-        // while (Date.now() < this._timer + timeoutMs) {
+        while (Date.now() < this._timer + timeoutMs) {
           const { move, score } = this.findBestMove(board, color, depth, -Infinity, Infinity);
           if ((color === 'white' && score > bestScore) || (color === 'black' && score < bestScore)) {
             bestScore = score
             bestMove = move
           }
           depth++;
-        // }
+        }
         
         this.printMetrics(depth, bestScore);
         return { move: bestMove, score: bestScore };

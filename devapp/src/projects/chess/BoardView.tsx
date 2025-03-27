@@ -47,7 +47,7 @@ export const Board = () => {
         setBoard(clone)
 
         if (isBotActive) {
-          const result = engine.findDeepeningOptimalMove(clone, 'black', 500)
+          const result = engine.findDeepeningOptimalMove(clone, 'black')
           if (result.move) {
             const moveResult = clone.applyMove(result.move?.from, result.move?.to)
             if (moveResult.isCheck) {
@@ -79,7 +79,7 @@ export const Board = () => {
   }
 
   const handleNextClick = () => {
-    const result = engine.findDeepeningOptimalMove(board, board._data._turn, 500)
+    const result = engine.findDeepeningOptimalMove(board, board._data._turn)
     debugger;
     if (result.move) {
       const moveResult = board.applyMove(result.move?.from, result.move?.to)
