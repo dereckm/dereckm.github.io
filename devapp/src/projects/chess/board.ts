@@ -380,7 +380,8 @@ export default class ChessBoard {
     return {
       isPromotion: this.isPromotion(toFlag, fromColor, fromPiece),
       movedTo: to,
-      isCheck: isCheck
+      isCheck: isCheck,
+      isCapture: isCapture
     }
   }
 
@@ -418,6 +419,11 @@ export default class ChessBoard {
     const color: Color = this.getColor(flag)
     this._data._bitboards[color]['P'] = this._data._bitboards[color]['P'].xor(flag)
     this._data._bitboards[color][piece] = this._data._bitboards[color][piece].or(flag)
+
+    const oppositeColor = this.flipColor(color)
+    const oppositeKing = this._data._bitboards[oppositeColor]['K']
+    const isCheck = this.isCheck(oppositeKing, oppositeColor)
+    return isCheck
   }
 
   undoMove() {
@@ -482,6 +488,7 @@ export default class ChessBoard {
     isPromotion: boolean
     movedTo: number
     isCheck: boolean
+    isCapture: boolean
   }
 
  

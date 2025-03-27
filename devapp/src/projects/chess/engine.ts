@@ -1,9 +1,9 @@
-import ChessBoard from "./board";
+import ChessBoard, { MoveResult } from "./board";
 import { Color, PromotablePiece } from './models/Piece';
 import { calculateOverallScoreDelta } from "./logic/scoring-heuristics/scoring";
 import { getAllLegalMoves, CandidateMove } from "./logic/move-generation/moves";
 
-const TIMEOUT_MS = 1000;
+const TIMEOUT_MS = 500;
 
 interface ScoredMove {
     move: CandidateMove | null;
@@ -50,12 +50,12 @@ export default class Engine {
         let bestScore = color === 'white' ? -Infinity : Infinity;
 
         for (const move of moves) {
-            board.applyMove(move.from, move.to);
+            const moveResult = board.applyMove(move.from, move.to);
             if (board.isCheckmate()) {
                 board.undoMove();
                 return { move, score: color === 'white' ? Infinity : -Infinity };
             }
-            const score = this.minimax(board, board.flipColor(color), depth, alpha, beta);
+            const score = this.minimax(board, board.flipColor(color), depth, alpha, beta, moveResult);
             board.undoMove();
 
             if ((color === 'white' && score > bestScore) || (color === 'black' && score < bestScore)) {
@@ -66,8 +66,11 @@ export default class Engine {
         return { move: bestMove, score: bestScore };
     }
 
-    minimax(board: ChessBoard, color: Color, depth: number, alpha: number, beta: number): number {
+    minimax(board: ChessBoard, color: Color, depth: number, alpha: number, beta: number, moveResult: MoveResult, quiescenceSearch: boolean = false): number {
         if (depth === 0) {
+            if (!quiescenceSearch && (moveResult.isCheck || moveResult.isCapture)) {
+                return this.minimax(board, color, 2, alpha, beta, moveResult, true)
+            }
             this._exploredPaths++;
             return calculateOverallScoreDelta(board);
         }
@@ -78,7 +81,7 @@ export default class Engine {
             for (const move of moves) {
                 const moveResult = board.applyMove(move.from, move.to);
                 if (moveResult.isPromotion) {
-                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta)
+                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
                   for(const s of scores) {
                     if (s > bestScore) bestScore = s
                   }
@@ -87,7 +90,7 @@ export default class Engine {
                     board.undoMove();
                     return Infinity;
                 }
-                const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta);
+                const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta, moveResult, quiescenceSearch);
                 board.undoMove();
                 
                 bestScore = Math.max(bestScore, score);
@@ -104,7 +107,7 @@ export default class Engine {
                 const moveResult = board.applyMove(move.from, move.to);
                 
                 if (moveResult.isPromotion) {
-                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta)
+                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
                   for(const s of scores) {
                     if (s < bestScore) bestScore = s
                   }
@@ -113,7 +116,7 @@ export default class Engine {
                     board.undoMove();
                     return -Infinity;
                 }
-                const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta);
+                const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta, moveResult, quiescenceSearch);
                 board.undoMove();
                 
                 bestScore = Math.min(bestScore, score);
@@ -127,11 +130,14 @@ export default class Engine {
         }
     }
 
-    explorePromotions(to: number, board: ChessBoard, color: Color, depth: number, alpha: number, beta: number) {
+    explorePromotions(to: number, board: ChessBoard, color: Color, depth: number, alpha: number, beta: number, moveResult: MoveResult) {
       const scores: number[] = []
       for(const move of promotionMoves) {
-        board.applyPromotion(to, move)
-        const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta)
+        const isCheck = board.applyPromotion(to, move)
+        if (isCheck) {
+            moveResult.isCheck = true
+        }
+        const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta, moveResult)
         scores.push(score)
       }
       return scores;
