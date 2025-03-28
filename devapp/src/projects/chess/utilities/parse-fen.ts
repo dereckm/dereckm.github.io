@@ -65,7 +65,8 @@ export class FENParser {
             return
         }
         const secondChar = this.eat()
-        return FLAGS_LOOKUP_INDEX[SQUARE_INDEX[char + secondChar]]
+        this._board._enPassantTargetSquare = FLAGS_LOOKUP_INDEX[SQUARE_INDEX[char + secondChar]]
+        this.eat() // consume space
     }
 
     parseCastlingRights() {

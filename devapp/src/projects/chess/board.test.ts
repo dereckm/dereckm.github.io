@@ -131,6 +131,12 @@ test('should apply black king-side castling correctly', () => {
     expect(newState).toBe('rnbqkbnr/pp1p1ppp/2p1P3/8/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 1')
   })
 
+  test('should have moves left to play', () => {
+    const board = new ChessBoard('5rk1/1pp2ppp/5qb1/4P3/1n4P1/2NP3N/1PpBB2P/r1K2RR1 w - - 1 19')
+    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.c3)
+    expect(moves.length).toBe(1)
+  })
+
 
 function setUp(boardString: string) {
     const board = new ChessBoard(boardString)

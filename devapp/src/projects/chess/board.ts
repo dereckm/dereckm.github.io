@@ -223,7 +223,10 @@ export default class ChessBoard {
       checkingMoves: Record<Piece, Int64>,
       sameColorPieces: Int64, 
       oppositeColorPieces: Int64) {
-    this.applyMove(index, moveIndex)
+    const moveResult = this.applyMove(index, moveIndex)
+
+    sameColorPieces = sameColorPieces.xor(this.getFlag(index))
+    sameColorPieces = sameColorPieces.xor(this.getFlag(moveResult.movedTo))
 
     const newKing =  this._data._bitboards[color]['K']
     checkingMoves = this.getCheckingMoves(newKing, index, color, sameColorPieces, oppositeColorPieces)
@@ -244,6 +247,7 @@ export default class ChessBoard {
     const whitePieces = this.getPiecesForColor('white')
     const fromFlag = this.getFlag(index)
     const color: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
+    if (color !== this._data._turn) return []
     const pieces = color === 'white' ? whitePieces : this.getPiecesForColor('black')
     const oppositePieces = color === 'white' ? this.getPiecesForColor('black') : whitePieces
     return this.getMoveIndexes(index, pieces, oppositePieces)
@@ -397,6 +401,10 @@ export default class ChessBoard {
       if (moves.length === 0) return true;
     }
     return false
+  }
+
+  isStalemate() {
+    return getAllLegalMoves(this, this._data._turn).length === 0
   }
 
   getColor(flag: Int64) {

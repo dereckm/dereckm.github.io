@@ -49,7 +49,7 @@ export default class Int64 {
   
     // Bitwise AND
     and(other: Int64) {
-      return new Int64(this.low & other.low, this.high & other.high);
+      return new Int64((this.low & other.low) >>> 0, (this.high & other.high) >>> 0);
     }
 
     set(low: number, high: number) {
@@ -69,7 +69,7 @@ export default class Int64 {
   
     // Bitwise NOT
     not() {
-      return new Int64(~this.low, ~this.high);
+      return new Int64((~this.low) >>> 0, (~this.high) >>> 0);
     }
   
     isFlag() {

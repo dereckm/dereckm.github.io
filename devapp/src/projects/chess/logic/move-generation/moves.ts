@@ -111,6 +111,7 @@ export function getMoveIndexesFromFlag(flag: Int64) {
 
 function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64, edges: Int64[], directions: ((i: number) => Int64)[]) {
     let moves = ZERO
+
     for(let direction = 0; direction < directions.length; direction++) {
         const edge = edges[direction]
         if (board.hasPiece(edge, flag)) // we're already at the edge
@@ -203,7 +204,8 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPie
     const index = flag.log2()
     const moves = knightMoves[index]
     const stepOvers = board.getPiecesForColor(color)
-    return moves.and(stepOvers.not())
+    const validMoves = moves.and(stepOvers.not())
+    return validMoves
   }
   
 

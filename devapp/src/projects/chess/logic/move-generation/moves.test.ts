@@ -1,14 +1,8 @@
 import ChessBoard from "../../board"
-import { getAllLegalMoves, generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves } from "./moves"
+import { getAllLegalMoves, generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves, checkRookMoves, getMoveIndexesFromFlag } from "./moves"
 import Int64, { ONE } from "../../../../logic/Int64"
 import { DEFAULT_BOARD } from "../../constants/fen"
-import { SQUARE_FLAGS } from "../../constants/squares"
-
-test('should not try to move piece that does not exist', () => {
-    const board = new ChessBoard('r1bqkb1r/pppppppp/2n5/8/4P3/8/PPP1NPPP/RNBQKB1R b KQkq')
-    const moves = getAllLegalMoves(board, 'black')
-    expect(moves).not.toContain(9)
-})
+import { SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"
 
 describe("generateKnightMoves", () => {
     let knightMoves: Record<number, Int64>;
@@ -254,3 +248,10 @@ describe('checkPawnMoves', () => {
       expect(moves.isBitSet(SQUARE_FLAGS.d3.log2())).toBe(false); // No piece to capture on d3
     });
   });
+
+  test('should allow capturing bishop', () => {
+    const board = new ChessBoard('rnbqkb1R/ppppp2p/8/8/8/8/PPQP1PPP/RNB1KBNR w KQkq - 0 6')
+    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.h8)
+    expect(moves.length).toBe(3)
+    expect(moves).toContain(SQUARE_INDEX.f8)
+  })

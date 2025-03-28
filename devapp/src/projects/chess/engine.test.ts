@@ -3,14 +3,14 @@ import { SQUARE_INDEX } from "./constants/squares"
 import Engine from "./engine"
 
 test('should not sacrifice with no gain', () => {
-    const board = new ChessBoard('8/8/8/KN6/8/8/1q6/1k6 b -')
+    const board = new ChessBoard('8/8/8/KN6/8/8/1q6/1k6 b - 0 14')
     const engine = new Engine()
     const bestMove = engine.findBestMove(board, 'black', 2)
     expect(bestMove.move?.to).not.toBe(38)
 })
 
 test('should find mate in one', () => {
-    const board = new ChessBoard('8/8/7R/8/8/2K5/8/2k5 w -')
+    const board = new ChessBoard('8/8/7R/8/8/2K5/8/2k5 w - 0 21')
     const engine = new Engine()
     const bestMove = engine.findBestMove(board, 'white', 2)
     expect(bestMove.move?.from).toBe(SQUARE_INDEX.h6)
@@ -18,7 +18,7 @@ test('should find mate in one', () => {
 })
 
 test('should eat free piece to get out of check', () => {
-    const board = new ChessBoard('8/8/1R6/8/8/2K5/1q6/2k5 w -')
+    const board = new ChessBoard('8/8/1R6/8/8/2K5/1q6/2k5 w - 0 8')
     const engine = new Engine()
     const bestMove = engine.findBestMove(board, 'white', 2)
     expect(bestMove.move?.from).toBe(SQUARE_INDEX.b6)
@@ -26,7 +26,7 @@ test('should eat free piece to get out of check', () => {
 })
 
 test('should eat free piece to get out of check', () => {
-    const board = new ChessBoard('8/8/1r6/8/8/2k5/1Q6/2K5 b -')
+    const board = new ChessBoard('8/8/1r6/8/8/2k5/1Q6/2K5 b - 0 10')
     const engine = new Engine()
     const bestMove = engine.findBestMove(board, 'black', 2)
     expect(bestMove.move?.from).toBe(SQUARE_INDEX.b6)
