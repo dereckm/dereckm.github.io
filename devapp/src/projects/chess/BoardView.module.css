@@ -87,6 +87,7 @@
     display: flex;
     gap: 8px;
     padding: 8px;
+    justify-content: center;
 }
 
 .chess-container {
@@ -105,9 +106,8 @@
     position: absolute;
     z-index: 10;
     background-color: #1B1F3B;
-    border: 1px solid #F5F5F5;
-    border-radius: 8px;
     color: #FFF;
+    opacity: 0.8;
 }
 
 .chess-promotion-choice-white {

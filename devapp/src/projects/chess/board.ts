@@ -253,10 +253,6 @@ export default class ChessBoard {
     return this.getMoveIndexes(index, pieces, oppositePieces)
   }
 
-  getMoveIndexesWithPieces() {
-
-  }
-
   getMoveIndexes(index: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
     const moves = this.checkMoves(index, sameColorPieces, oppositeColorPieces)
     const indexes = []

@@ -137,6 +137,12 @@ test('should apply black king-side castling correctly', () => {
     expect(moves.length).toBe(1)
   })
 
+  test('should consider checkmate correctly', () => {
+    const board = new ChessBoard('2kr4/1pp2p1p/5p2/4p3/4b3/4q3/7P/3K4 w - - 2 27')
+    const isCheckmate = board.isCheckmate()
+    expect(isCheckmate).toBe(true)
+  })
+
 
 function setUp(boardString: string) {
     const board = new ChessBoard(boardString)
