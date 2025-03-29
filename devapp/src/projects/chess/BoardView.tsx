@@ -26,7 +26,7 @@ type GameState = {
 }
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard('2k4r/1pp2p1p/5p2/4p3/4b3/4q3/7P/3K4 b - - 1 27'))
+  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
   const [playerColor, setPlayerColor] = useState<Color>('white')
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
