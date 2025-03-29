@@ -1,5 +1,6 @@
+import { expect, test, describe, beforeAll, beforeEach } from 'vitest'
 import ChessBoard from "../../board"
-import { getAllLegalMoves, generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves, checkRookMoves, getMoveIndexesFromFlag } from "./moves"
+import { generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves, checkRookMoves, getMoveIndexesFromFlag } from "./moves"
 import Int64, { ONE } from "../../../../logic/Int64"
 import { DEFAULT_BOARD } from "../../constants/fen"
 import { SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"

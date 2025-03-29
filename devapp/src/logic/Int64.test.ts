@@ -1,4 +1,4 @@
-import { } from 'jest'
+import { expect, test } from 'vitest'
 import Int64 from './Int64'
 
 test('basic', () => {

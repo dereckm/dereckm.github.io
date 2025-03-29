@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
-import { ReactComponent as PersonIcon } from './person.svg'
-import { ReactComponent as ResumeIcon } from './resume.svg'
-import { ReactComponent as ProjectsIcon } from './projects.svg'
-import { ReactComponent as ContactIcon } from './contact.svg'
+import PersonIcon  from './person.svg'
+import ResumeIcon from './resume.svg'
+import ProjectsIcon from './projects.svg'
+import ContactIcon from './contact.svg'
 
 import styles from './Menu.module.css'
 import MenuItem from './MenuItem'
+import { IconProps } from '@tabler/icons-react'
 
 let visibleEntries: string[] = []
 const sections = ['about-me', 'resume', 'projects', 'contact'];
@@ -70,13 +71,20 @@ const Menu = ({ selectedMenuItem, setSelectedMenuItem }: MenuProps) => {
     const check = (key: string) => selectedMenuItem === key
     return (
         <div className={styles['menu-container']}>
-            <MenuItem icon={<PersonIcon />} title='About me' onClick={handleClick('about-me')} isSelected={check('about-me')} />
-            <MenuItem icon={<ResumeIcon />} title='Resume' onClick={handleClick('resume')} isSelected={check('resume')} />
-            <MenuItem icon={<ProjectsIcon />} title='Projects' onClick={handleClick('projects')} isSelected={check('projects')} />
-            <MenuItem icon={<ContactIcon />} title='Contact' onClick={handleClick('contact')} isSelected={check('contact')} />
+            <MenuItem icon={<Icon data={PersonIcon} />} title='About me' onClick={handleClick('about-me')} isSelected={check('about-me')} />
+            <MenuItem icon={<Icon data={ResumeIcon} />} title='Resume' onClick={handleClick('resume')} isSelected={check('resume')} />
+            <MenuItem icon={<Icon data={ProjectsIcon} />} title='Projects' onClick={handleClick('projects')} isSelected={check('projects')} />
+            <MenuItem icon={<Icon data={ContactIcon} />} title='Contact' onClick={handleClick('contact')} isSelected={check('contact')} />
         </div>
         
     )
+}
+
+type IconProps = {
+  data: string
+}
+const Icon = (props: IconProps) => {
+  return <img src={props.data}></img>
 }
 
 type MenuProps = {

@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import ChessBoard from "./board"
 import { SQUARE_INDEX } from "./constants/squares"
 import Engine from "./engine"

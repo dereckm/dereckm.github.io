@@ -4,29 +4,27 @@
   "homepage": "https://dereckm.github.io",
   "private": true,
   "dependencies": {
-    "@tabler/icons": "^1.78.1",
+    "@tabler/icons": "^3.31.0",
     "@tabler/icons-react": "^3.31.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
     "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "color": "^4.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
-    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.0"
   },
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "tsc & vite build",
+    "test": "vitest"
   },
   "eslintConfig": {
     "extends": [
@@ -48,7 +46,11 @@
   },
   "devDependencies": {
     "@types/color": "^3.0.3",
+    "@types/node": "^22.13.14",
     "gh-pages": "^4.0.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vite": "^6.2.3",
+    "vite-plugin-svgr": "^4.3.0",
+    "vitest": "^3.0.9"
   }
 }
