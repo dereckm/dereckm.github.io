@@ -1,13 +1,6 @@
-import { expect, test, describe } from 'vitest'
+import { expect, test } from 'vitest'
 import ChessBoard from './board'
 import { SQUARE_INDEX } from './constants/squares'
-
-// test('should allow blocking check with knight', () => {
-//     const board = setUp('rbn1knbr/pp1ppppp/8/2p5/4P3/1NqPN3/P1P2PPP/RB1QK1BR w KQkq - 0 0')
-//     const pieces = board.getPiecesForColor('white')
-//     const moves = board.checkMoves(4, pieces)
-//     expect(moves.toString(2)).toBe('1000000000000')
-// })
 
 test('will consider promotion', () => {
     const board = setUp('7p/1P6/8/2p5/4P3/8/P1P5/8 w - - 0 0')
@@ -17,8 +10,6 @@ test('will consider promotion', () => {
 
 test('king cannot move towards another king', () => {
     const board = setUp('7p/1P6/4K3/2p5/4Pk2/8/P1P5/8 w - - 0 0')
-    const pieces = board.getPiecesForColor('white')
-    const oppositePieces = board.getPiecesForColor('black')
     const moves = board.getMoveIndexesFromIndex(43)
     expect(6).toBe(moves.length)
 })
@@ -33,7 +24,6 @@ test('king moves should generate correctly', () => {
 
 test('pawns should not capture via going out of bounds', () => {
     const board = setUp('rnbqkb1r/pppppppp/5n2/P7/8/8/1PPPPPPP/RNBQKBNR b - - 0 0')
-    const pieces = board.getPiecesForColor('black')
     const moves = board.getMoveIndexesFromIndex(48)
     expect(moves.length).toBe(2)
 })
