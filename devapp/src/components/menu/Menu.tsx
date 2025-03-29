@@ -7,7 +7,6 @@ import ContactIcon from './contact.svg'
 
 import styles from './Menu.module.css'
 import MenuItem from './MenuItem'
-import { IconProps } from '@tabler/icons-react'
 
 let visibleEntries: string[] = []
 const sections = ['about-me', 'resume', 'projects', 'contact'];
