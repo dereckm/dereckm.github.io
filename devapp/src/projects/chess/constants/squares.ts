@@ -1,6 +1,5 @@
 import Int64, { ONE } from "../../../logic/Int64";
 
-
 export const SQUARE_FLAGS = {
     h1: ONE,
     h2: ONE.shl(8),

@@ -1,3 +1,13 @@
+function generateFlagIndexLookup(): Record<number, number> {
+  const lookup: Record<number, number> = {};
+  for (let i = 0; i < 32; i++) {
+    lookup[(1 << i) >>> 0] = i;
+  }
+  return lookup;
+}
+
+export const INDEX_LOOKUP_FROM_FLAG = generateFlagIndexLookup()
+
 export default class Int64 {
     low: number
     high: number
@@ -77,6 +87,11 @@ export default class Int64 {
     }
   
     log2() {
+      if (this.low === 0) {
+        return INDEX_LOOKUP_FROM_FLAG[this.high] + 32
+      }
+      return INDEX_LOOKUP_FROM_FLAG[this.low]
+
       return this.low === 0 
         ? Math.log2(this.high) + 32
         : Math.log2(this.low)
