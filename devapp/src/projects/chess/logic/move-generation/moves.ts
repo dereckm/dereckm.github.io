@@ -109,7 +109,7 @@ export function getMoveIndexesFromFlag(flag: Int64) {
     return indexes;
 }
 
-function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64, edges: Int64[], directions: ((i: number) => Int64)[]) {
+function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64, edges: Int64[], directions: ((flag: Int64, i: number) => Int64)[]) {
     let moves = ZERO
 
     for(let direction = 0; direction < directions.length; direction++) {
@@ -117,12 +117,10 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: In
         if (board.hasPiece(edge, flag)) // we're already at the edge
             continue
         
+        const moveFunction = directions[direction]
         for(let i = 1; i <= 7; i++) {
-            const pos = directions[direction](i)
-            const coords = toCoords(pos.log2())
-            if (!isInBounds([coords.x, coords.y])) {
-                break;
-            }
+            const pos = moveFunction(flag, i)
+            // we're blocked by our own piece
             if (board.hasPiece(piecesForColor, pos)) {
                 break
             }
@@ -173,25 +171,25 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPie
         .or(checkRookMoves(board, flag, oppositeColorPieces, piecesForColor))
   }
 
+
+  const rookDirections = [
+    (flag: Int64, i: number) => flag.shl(i * 8),
+    (flag: Int64, i: number) => flag.shr(i * 1),
+    (flag: Int64, i: number) => flag.shr(i * 8),
+    (flag: Int64, i: number) => flag.shl(i * 1)
+  ]
   export function checkRookMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
-    const directions = [
-      (i: number) => flag.shl(i * 8),
-      (i: number) => flag.shr(i * 1),
-      (i: number) => flag.shr(i * 8),
-      (i: number) => flag.shl(i * 1)
-     ]
-     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, rookEdges, directions)
+     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, rookEdges, rookDirections)
   }
 
+  const bishopDirections = [
+    (flag: Int64, i: number) => flag.shl(i * 9),
+    (flag: Int64, i: number) => flag.shl(i * 7),
+    (flag: Int64, i: number) => flag.shr(i * 7),
+    (flag: Int64, i: number) => flag.shr(i * 9)
+  ]
   export function checkBishopMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
-    const directions = [
-      (i: number) => flag.shl(i * 9),
-      (i: number) => flag.shl(i * 7),
-      (i: number) => flag.shr(i * 7),
-      (i: number) => flag.shr(i * 9)
-     ]
-
-     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, bishopEdges, directions)
+     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, bishopEdges, bishopDirections)
   }
 
   export function checkKnightMoves(board: ChessBoard, flag: Int64, color: Color) {

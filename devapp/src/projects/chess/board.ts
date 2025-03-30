@@ -115,12 +115,14 @@ export default class ChessBoard {
   }
 
   getPiecesForColor(color: Color) {
-    return this._data._bitboards[color]['P']
-    .or(this._data._bitboards[color]['N'])
-    .or(this._data._bitboards[color]['B'])
-    .or(this._data._bitboards[color]['R'])
-    .or(this._data._bitboards[color]['Q'])
-    .or(this._data._bitboards[color]['K'])
+    const flag = this._data._bitboards[color]['P']
+    const inPlaceFlag = new Int64(flag.low, flag.high)
+      .mutate_or(this._data._bitboards[color]['N'])
+      .mutate_or(this._data._bitboards[color]['B'])
+      .mutate_or(this._data._bitboards[color]['R'])
+      .mutate_or(this._data._bitboards[color]['Q'])
+      .mutate_or(this._data._bitboards[color]['K'])
+    return inPlaceFlag
   }
 
   getAllPieces() {
@@ -131,14 +133,16 @@ export default class ChessBoard {
     const flag = this.getFlag(fromIndex)
     const color = this._data._turn
     const piece = this.getPiece(flag)
-    if (!this.hasPiece(sameColorPieces, flag)) return ZERO
     let moves = ZERO
-    if (piece === 'P') moves = checkPawnMoves(this, flag, color)
-    else if (piece === 'N') moves =  checkKnightMoves(this, flag, color)
-    else if (piece === 'B') moves =  checkBishopMoves(this, flag, oppositeColorPieces, sameColorPieces)
-    else if (piece === 'R') moves =  checkRookMoves(this, flag, oppositeColorPieces, sameColorPieces)
-    else if (piece === 'Q') moves =  checkQueenMoves(this, flag, oppositeColorPieces, sameColorPieces)
-    else if (piece === 'K') moves = checkKingMoves(this, flag, color)
+    switch (piece) {
+      case 'P': moves = checkPawnMoves(this, flag, color); break;
+      case 'N': moves = checkKnightMoves(this, flag, color); break;
+      case 'B': moves = checkBishopMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'R': moves = checkRookMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'Q': moves = checkQueenMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'K': moves = checkKingMoves(this, flag, color); break;
+    }
+    if (moves.isZero()) return moves;
     moves = this.checkMovesForCheck(moves, color, fromIndex)
     return moves
   }

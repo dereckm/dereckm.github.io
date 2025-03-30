@@ -71,6 +71,12 @@ export default class Int64 {
     or(other: Int64) {
       return new Int64((this.low | other.low) >>> 0, (this.high | other.high) >>> 0);
     }
+
+    mutate_or(other: Int64) {
+      this.low = (this.low | other.low) >>> 0
+      this.high = (this.high | other.high) >>> 0
+      return this
+    }
   
     // Bitwise XOR
     xor(other: Int64) {
