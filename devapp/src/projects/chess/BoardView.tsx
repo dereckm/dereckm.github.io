@@ -86,12 +86,13 @@ export const Board = () => {
             if (moveResult.isCheck) {
               checkSound.play()
             }
-            setBoard(clone.clone())
-            if (board.isCheckmate()) {
+            console.log(clone.isCheckmate())
+            if (clone.isCheckmate()) {
               setGameState({ isOver: true, winner: 'black' })
-            } else if (board.isStalemate()) {
+            } else if (clone.isStalemate()) {
               setGameState({ isOver: true, winner: null })
             }
+            setBoard(clone.clone())
           }
         }
       }
