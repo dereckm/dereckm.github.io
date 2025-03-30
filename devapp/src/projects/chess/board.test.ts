@@ -134,6 +134,20 @@ test('should apply black king-side castling correctly', () => {
     expect(isCheckmate).toBe(true)
   })
 
+  test('should not trigger en-passant logic', () => {
+    const board = new ChessBoard('rnbqkbnr/ppppp1pp/8/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 2')
+    board.applyMove(8, 16)
+    const state = board.save()
+    expect(state).toBe('rnbqkbnr/ppppp1pp/8/4Pp2/8/7P/PPPP1PP1/RNBQKBNR b KQkq - 0 3')
+  })
+
+  test('should consider pieces taken for castling rights', () => {
+    const board = new ChessBoard('rnb1kbnr/pp1p1ppp/2p5/4pP2/8/4P2N/PPPPB1QP/RNBQK3 w KQkq - 0 3')
+    board.applyMove(SQUARE_INDEX.g2, SQUARE_INDEX.h1)
+    expect(board._data._hasWhiteKingSideCastleRight).toBe(false)
+  })
+
+
 
 function setUp(boardString: string) {
     const board = new ChessBoard(boardString)

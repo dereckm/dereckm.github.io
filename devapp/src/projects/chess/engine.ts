@@ -52,11 +52,11 @@ export default class Engine {
         for (const move of moves) {
             const moveResult = board.applyMove(move.from, move.to);
             if (board.isCheckmate()) {
-                board.undoMove();
+                board.undoMove(moveResult);
                 return { move, score: color === 'white' ? Infinity : -Infinity };
             }
             const score = this.minimax(board, board.flipColor(color), depth, alpha, beta, moveResult);
-            board.undoMove();
+            board.undoMove(moveResult);
 
             if ((color === 'white' && score > bestScore) || (color === 'black' && score < bestScore)) {
                 bestScore = score;
@@ -68,7 +68,7 @@ export default class Engine {
 
     minimax(board: ChessBoard, color: Color, depth: number, alpha: number, beta: number, moveResult: MoveResult, quiescenceSearch: boolean = false): number {
         if (depth === 0) {
-            if (!quiescenceSearch && (moveResult.isCheck || moveResult.isCapture)) {
+            if (!quiescenceSearch && (moveResult.isCheck || moveResult.capturedPiece)) {
                 return this.minimax(board, color, 2, alpha, beta, moveResult, true)
             }
             this._exploredPaths++;
@@ -80,18 +80,18 @@ export default class Engine {
             let bestScore = -Infinity;
             for (const move of moves) {
                 const moveResult = board.applyMove(move.from, move.to);
-                if (moveResult.isPromotion) {
-                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
-                  for(const s of scores) {
-                    if (s > bestScore) bestScore = s
-                  }
-                }
+                // if (moveResult.isPromotion) {
+                //   const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
+                //   for(const s of scores) {
+                //     if (s > bestScore) bestScore = s
+                //   }
+                // }
                 if (board.isCheckmate()) {
-                    board.undoMove();
+                    board.undoMove(moveResult);
                     return Infinity;
                 }
                 const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta, moveResult, quiescenceSearch);
-                board.undoMove();
+                board.undoMove(moveResult);
                 
                 bestScore = Math.max(bestScore, score);
                 alpha = Math.max(alpha, bestScore);
@@ -106,18 +106,18 @@ export default class Engine {
             for (const move of moves) {
                 const moveResult = board.applyMove(move.from, move.to);
                 
-                if (moveResult.isPromotion) {
-                  const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
-                  for(const s of scores) {
-                    if (s < bestScore) bestScore = s
-                  }
-                }
+                // if (moveResult.isPromotion) {
+                //   const scores = this.explorePromotions(move.to, board, color, depth, alpha, beta, moveResult)
+                //   for(const s of scores) {
+                //     if (s < bestScore) bestScore = s
+                //   }
+                // }
                 if (board.isCheckmate()) {
-                    board.undoMove();
+                    board.undoMove(moveResult);
                     return -Infinity;
                 }
                 const score = this.minimax(board, board.flipColor(color), depth - 1, alpha, beta, moveResult, quiescenceSearch);
-                board.undoMove();
+                board.undoMove(moveResult);
                 
                 bestScore = Math.min(bestScore, score);
                 beta = Math.min(beta, bestScore);

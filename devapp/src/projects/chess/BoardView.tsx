@@ -62,12 +62,12 @@ export const Board = () => {
       const legalMoves = board.getMoveIndexesFromIndex(selectedIndex)
       if (legalMoves.includes(targetIndex)) {
         const moveResult = board.applyMove(selectedIndex, targetIndex)
+        setLastMoveResult(moveResult)
         if (moveResult.isCheck) {
           checkSound.play()
         }
         if (moveResult.isPromotion) {
           setIsPromoting(true)
-          setLastMoveResult(moveResult)
         }
         if (board.isCheckmate()) {
           setGameState({ isOver: true, winner: playerColor })
@@ -119,7 +119,6 @@ export const Board = () => {
 
   const handleNextClick = () => {
     const result = engine.findDeepeningOptimalMove(board, board._data._turn)
-    debugger;
     if (result.move) {
       const moveResult = board.applyMove(result.move?.from, result.move?.to)
       if (moveResult.isCheck) {
@@ -130,8 +129,8 @@ export const Board = () => {
   }
 
   const handlePreviousClick = () => {
-    const lastState = board.undoMove()
-    if (lastState) {
+    if (lastMoveResult != null) {
+      board.undoMove(lastMoveResult)
       setBoard(board.clone())
     }
   }

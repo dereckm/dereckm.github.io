@@ -157,25 +157,20 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
         }
     }
     const stepOvers = board.getPiecesForColor(color)
-    if (moves == null)
+    if (moves == null) {
+        debugger;
         console.log(index)
+        console.log(flag.toString(2))
+    }
+        
     const validMoves = moves.and(stepOvers.not())
     return validMoves
   }
 
 
 export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
-    const directions = [
-      (i: number) => flag.shl(i * 8),
-      (i: number) => flag.shr(i * 1),
-      (i: number) => flag.shr(i * 8),
-      (i: number) => flag.shl(i * 1),
-      (i: number) => flag.shl(i * 9),
-      (i: number) => flag.shl(i * 7),
-      (i: number) => flag.shr(i * 7),
-      (i: number) => flag.shr(i * 9)
-     ]
-     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, queenEdges, directions)
+    return checkBishopMoves(board, flag, oppositeColorPieces, piecesForColor)
+        .or(checkRookMoves(board, flag, oppositeColorPieces, piecesForColor))
   }
 
   export function checkRookMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
