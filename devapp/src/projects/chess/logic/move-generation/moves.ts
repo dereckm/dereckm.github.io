@@ -273,25 +273,23 @@ function getPawnCaptureMoves(board: ChessBoard, flag: Int64, x: number, opponent
       const oppositePieces = board.getPiecesForColor(board.flipColor(color))
       const moves = []
       for(let i = 0; i < 64; i++) {
-          const flag = board.getFlag(i)
-          if (board.hasPiece(pieces, flag)) {
-              const piece = board.getPiece(flag)
-              if (piece != null) {
-                const toIndexes = board.getMoveIndexes(i, pieces, oppositePieces)
-                for(const toIndex of toIndexes) {
-                  const toFlag = board.getFlag(toIndex)
-                  const isCapture = board.hasPiece(oppositePieces, toFlag)
-                  const isPromotion = board.isPromotion(toFlag, color, piece)
-                  if (isPromotion) {
+            const flag = board.getFlag(i)
+            if (!board.hasPiece(pieces, flag)) continue;
+            const piece = board.getPiece(flag)
+            if (piece == null) continue;
+            const toIndexes = board.getMoveIndexes(i, pieces, oppositePieces)
+            for(const toIndex of toIndexes) {
+                const toFlag = board.getFlag(toIndex)
+                const isCapture = board.hasPiece(oppositePieces, toFlag)
+                const isPromotion = board.isPromotion(toFlag, color, piece)
+                if (isPromotion) {
                     for(const promoteTarget of promoteTargets) {
                         moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: promoteTarget as Piece })
                     }
-                  } else {
+                } else {
                     moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: null })
-                  }
                 }
-              }
-          }
+            }
       }
       return moves.toSorted((a, b) =>  {
         if (a.isCapture && !b.isCapture) {

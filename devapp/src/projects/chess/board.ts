@@ -35,7 +35,7 @@ export default class ChessBoard {
     return b
   }
 
-  save() {
+  save(asHash: boolean = false) {
     let fen = ''
     let count = 0;
     const whitePieces = this.getPiecesForColor('white')
@@ -72,14 +72,15 @@ export default class ChessBoard {
     } else {
       fen += ' -'
     }
+    if (asHash) return fen;
     fen += ` ${this._data._halfMoveClock}`;
     fen += ` ${this._data._fullMoveNumber}`
 
     return fen
   }
 
-  parseTurn() {
-
+  hash() {
+    return this.save(true)
   }
 
   toBinaryString(input: string, char: string) {
@@ -187,19 +188,17 @@ export default class ChessBoard {
     if (moves.isZero()) return moves
 
     const oppositeColor = this.flipColor(color)
-
-    let legalMoves = ZERO
+    let legalMoves = new Int64(0, 0)
     for(let moveIndex = 0; moveIndex < 64; moveIndex++) {
       const currentMove = this.getFlag(moveIndex)
-      if (this.hasPiece(moves, currentMove)) {
-        legalMoves = legalMoves.or(this.testMoveForCheck(
-          fromIndex,
-          moveIndex,
-          color,
-          oppositeColor,
-          currentMove,
-        ))
-      }
+      if (!this.hasPiece(moves, currentMove)) continue;
+      legalMoves.mutate_or(this.testMoveForCheck(
+        fromIndex,
+        moveIndex,
+        color,
+        oppositeColor,
+        currentMove,
+      ))
     }
     return legalMoves
   }
@@ -216,12 +215,13 @@ export default class ChessBoard {
     const king =  this._data._bitboards[color]['K']
     const checkingMoves = this.getCheckingMoves(king, color, sameColorPieces, oppositeColorPieces)
 
-    const isCheck = this.hasPiece(checkingMoves['P'], this._data._bitboards[oppositeColor]['P']) 
-      || this.hasPiece(checkingMoves['N'], this._data._bitboards[oppositeColor]['N'])
-      || this.hasPiece(checkingMoves['B'], this._data._bitboards[oppositeColor]['B'])
-      || this.hasPiece(checkingMoves['R'], this._data._bitboards[oppositeColor]['R'])
-      || this.hasPiece(checkingMoves['Q'], this._data._bitboards[oppositeColor]['Q'])
-      || this.hasPiece(checkingMoves['K'], this._data._bitboards[oppositeColor]['K'])
+    const oppositePieces = this._data._bitboards[oppositeColor]
+    const isCheck = this.hasPiece(checkingMoves['P'], oppositePieces['P']) 
+      || this.hasPiece(checkingMoves['N'], oppositePieces['N'])
+      || this.hasPiece(checkingMoves['B'], oppositePieces['B'])
+      || this.hasPiece(checkingMoves['R'], oppositePieces['R'])
+      || this.hasPiece(checkingMoves['Q'], oppositePieces['Q'])
+      || this.hasPiece(checkingMoves['K'], oppositePieces['K'])
 
     this.undoMove(moveResult)
 
@@ -372,7 +372,7 @@ export default class ChessBoard {
     
     const oppositeColor = this.flipColor(fromColor)
     const oppositeKing = this._data._bitboards[oppositeColor]['K']
-    const isCheck = this.isCheck(oppositeKing, oppositeColor)
+    const isCheck = false
 
     if (this._data._turn === 'black')
       this._data._fullMoveNumber++;
