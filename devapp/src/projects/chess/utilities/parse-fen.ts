@@ -4,7 +4,6 @@ import { Color, Piece } from "../models/Piece";
 
 const NOT_NUMBER = -1;
 const TURN_COLORS: Record<string, Color> = { 'w': 'white', 'b': 'black' }
-const SLASH = 47
  
 export class FENParser {
 
@@ -95,26 +94,18 @@ export class FENParser {
         let index = 0
         while(true) {
             const char = this.eat()
-            if (char.charCodeAt(0) === SLASH) continue;
+            if (char === '/') continue;
             if (char === ' ') return;
             const maybeNumber = this.parseDigit(char)
             if (maybeNumber !== NOT_NUMBER) {
                 index += maybeNumber
                 continue;
             }
-            if (char === char.toLowerCase()) {
-                const piece = this.charToPiece(char)
-                const flag = FLAGS_LOOKUP_INDEX[63 - index]
-                this._board._bitboards['black'][piece] = this._board._bitboards['black'][piece].or(flag)
-                index++;
-                continue;
-            }
-            else {
-                const piece: Piece = char as Piece
-                const flag = FLAGS_LOOKUP_INDEX[63 - index]
-                this._board._bitboards['white'][piece] = this._board._bitboards['white'][piece].or(flag)
-                index++;
-            }
+            const color = char >= 'a' && char <= 'z' ? 'black' : 'white'
+            const piece = this.charToPiece(char)
+            const flag = FLAGS_LOOKUP_INDEX[63 - index]
+            this._board._bitboards[color][piece] = this._board._bitboards[color][piece].or(flag)
+            index++;
         }
     }
 
@@ -140,6 +131,12 @@ export class FENParser {
             case 'r': return 'R'
             case 'q': return 'Q'
             case 'k': return 'K'
+            case 'P': return 'P';
+            case 'N': return 'N';
+            case 'B': return 'B'
+            case 'R': return 'R'
+            case 'Q': return 'Q'
+            case 'K': return 'K'
             default: throw new Error('should not try to convert invalid piece')
         }
     }
