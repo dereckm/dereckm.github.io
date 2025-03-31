@@ -4,7 +4,8 @@ import { Square } from '../../models/Square'
 import { 
   checkPawnMoves, checkKnightMoves, checkBishopMoves, 
   checkRookMoves, checkQueenMoves, checkKingMoves,
-  getAllLegalMoves
+  getAllLegalMoves,
+  getCheckingMoves
  } from '../move-generation/moves'
 import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"
 import { FENParser } from "../../utilities/parse-fen"
@@ -19,6 +20,10 @@ const NINE = 9
 
 const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000")
 const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
+const PROMOTIONS_RANKS: Record<Color, Int64> = {
+  'white': WHITE_PROMOTION_RANK,
+  'black': BLACK_PROMOTION_RANK
+}
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
@@ -54,20 +59,33 @@ export default class ChessBoard {
     return 63 - ((i * 8) + j)
   }
 
-  isCheck(kingPos: Int64, color: Color) {
-    var oppositeColor: Color = this.flipColor(color)
-    let pawnAttacks: Int64 = color === 'white' 
-      ? kingPos.shl(SEVEN).or(kingPos.shl(NINE)) 
-      : kingPos.shr(SEVEN).or(kingPos.shr(NINE))
+  isOpponentInCheckState() {
+    this._data._turn = this.flipColor(this._data._turn)
+    const isCheck = this.isCheckState()
+    this._data._turn  = this.flipColor(this._data._turn)
+    return isCheck
+  }
+
+  /**
+   * Checks whether the current player is in check.
+   * @returns true if current player in check, otherwise false.
+   */
+  isCheckState() {
+    const color: Color = this._data._turn
+    const opponentColor = this.flipColor(color)
+    const king = this._data._bitboards[color]['K']
     const sameColorPieces = this.getPiecesForColor(color)
-    const oppositeColorPieces = this.getPiecesForColor(this.flipColor(color))
-    const bishopMoves = checkBishopMoves(this, kingPos, oppositeColorPieces, sameColorPieces)
-    const rookMoves = checkRookMoves(this, kingPos,  oppositeColorPieces, sameColorPieces)
-    return this.hasPiece(pawnAttacks, this._data._bitboards[oppositeColor]['P'])
-    || this.hasPiece(checkKnightMoves(this, kingPos, color), this._data._bitboards[oppositeColor]['N'])
-    || this.hasPiece(bishopMoves, this._data._bitboards[oppositeColor]['B'])
-    || this.hasPiece(rookMoves, this._data._bitboards[oppositeColor]['R'])
-    || this.hasPiece(bishopMoves.or(rookMoves), this._data._bitboards[oppositeColor]['Q'])
+    const opponentPieces = this.getPiecesForColor(opponentColor)
+    const checkingMoves = getCheckingMoves(this, king, color, sameColorPieces, opponentPieces)
+
+    const oppositePieces: Record<string, Int64> = this._data._bitboards[opponentColor]
+    const isCheck = this.hasPiece(checkingMoves['P'], oppositePieces['P'])
+        || this.hasPiece(checkingMoves['N'], oppositePieces['N'])
+        || this.hasPiece(checkingMoves['B'], oppositePieces['B'])
+        || this.hasPiece(checkingMoves['R'], oppositePieces['R'])
+        || this.hasPiece(checkingMoves['Q'], oppositePieces['Q'])
+        || this.hasPiece(checkingMoves['K'], oppositePieces['K'])
+      return isCheck;
   }
 
   getPiecesForColor(color: Color) {
@@ -91,29 +109,13 @@ export default class ChessBoard {
     const y = Math.floor(index / 8)
     let moves = ZERO
     if (color === 'white') {
-      if (x > 0 && y < 6) moves = moves.or(king.shl(SEVEN))
-      if (x < 7 && y < 6) moves = moves.or(king.shl(NINE))
+      if (x > 0 && y > 1) moves = moves.or(king.shl(SEVEN))
+      if (x < 7 && y > 1) moves = moves.or(king.shl(NINE))
     } else {
-      if (x > 0 && y > 1) moves = moves.or(king.shr(NINE))
-      if (x < 7 && y > 1) moves = moves.or(king.shr(SEVEN))
+      if (x > 0 && y < 6) moves = moves.or(king.shr(NINE))
+      if (x < 7 && y < 6) moves = moves.or(king.shr(SEVEN))
     }
     return moves
-  }
-
-  applyCastlingMove(toIndex: number) {
-    if (toIndex === SQUARE_INDEX.g1) {
-      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].xor(SQUARE_FLAGS.h1)
-      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].or(SQUARE_FLAGS.f1)
-    } else if (toIndex === SQUARE_INDEX.c1) {
-      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].xor(SQUARE_FLAGS.a1)
-      this._data._bitboards['white']['R'] = this._data._bitboards['white']['R'].or(SQUARE_FLAGS.d1)
-    } else if (toIndex === SQUARE_INDEX.g8) {
-      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].xor(SQUARE_FLAGS.h8)
-      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].or(SQUARE_FLAGS.f8)
-    } else if (toIndex === SQUARE_INDEX.c8) {
-      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].xor(SQUARE_FLAGS.a8)
-      this._data._bitboards['black']['R'] = this._data._bitboards['black']['R'].or(SQUARE_FLAGS.d8)
-    }
   }
 
   updateCastlingRights(from: number, to: number) {
@@ -131,20 +133,6 @@ export default class ChessBoard {
     }
   }
 
-  applyEnPassant(to: number, color: Color, fromPiece: Piece) {
-    if (this._data._enPassantTargetSquare == null || fromPiece !== 'P') return false
-    const toFlag = this.getFlag(to)
-    if (this._data._enPassantTargetSquare !== toFlag) return false
-    let isEnPassantMove = false;
-    if (color === 'white' && toFlag === this._data._enPassantTargetSquare) {
-      this._data._bitboards['black']['P'] =  this._data._bitboards['black']['P'].xor(this._data._enPassantTargetSquare.shr(8))
-      isEnPassantMove = true
-    } else if (color === 'black' && this._data._enPassantTargetSquare.shl(8).equals(this.getFlag(to))) {
-      this._data._bitboards['white']['P'] =  this._data._bitboards['white']['P'].xor(this._data._enPassantTargetSquare.shl(8))
-      isEnPassantMove = true
-    }
-    return isEnPassantMove
-  }
 
   checkEnPassant(from: number, to: number, fromPiece: Piece) {
     if (fromPiece === 'P' && Math.abs(from - to) === 16) {
@@ -168,102 +156,23 @@ export default class ChessBoard {
     }
   }
 
-
-
-  applyMove(from: number, to: number): MoveResult {
-    const whitePieces = this.getPiecesForColor('white')
-    const fromFlag = this.getFlag(from)
-    const fromColor: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
-    const fromPiece = this.getPiece(fromFlag)
-    if (fromPiece == null) {
-      debugger;
-      throw new Error(`Cannot find the piece to move at index: ${from}`)
-    }
-    const toFlag = this.getFlag(to)
-
-    const moveChanges: MoveChanges = {
-      _halfMoveClock: this._data._halfMoveClock,
-      _fullMoveNumber: this._data._fullMoveNumber,
-      _hasWhiteKingSideCastleRight: this._data._hasWhiteKingSideCastleRight,
-      _hasWhiteQueenSideCastleRight: this._data._hasWhiteQueenSideCastleRight,
-      _hasBlackKingSideCastleRight: this._data._hasBlackKingSideCastleRight,
-      _hasBlackQueenSideCastleRight: this._data._hasBlackQueenSideCastleRight,
-      _enPassantTargetSquare: this._data._enPassantTargetSquare
-    }
-
-    const isEnPassantMove = this.applyEnPassant(to, fromColor, fromPiece)
-    this.checkEnPassant(from, to, fromPiece)
-    
-    let isCastling = false
-    if (fromPiece === 'K') {
-      const diff = from - to
-      if (diff === 2 || diff === -2) {
-        isCastling = true
-        this.applyCastlingMove(to)
-      }
-    }
-
-    const isPawnMove = fromPiece === 'P'
-    const toPiece = this.getPiece(toFlag)
-    const isCapture = toPiece != null
-    if (isCapture) {
-      this.capturePiece(toPiece, toFlag)
-    }
-    
-    this.updateCastlingRights(from, to)
-
-    // Clear from position
-    this._data._bitboards[fromColor][fromPiece] =  this._data._bitboards[fromColor][fromPiece].xor(fromFlag)
-      
-    // Set board with new piece on to position
-    this._data._bitboards[fromColor][fromPiece] = this._data._bitboards[fromColor][fromPiece].or(toFlag)
-    this._data._turn = this.flipColor(this._data._turn)
-    
-    const oppositeColor = this.flipColor(fromColor)
-    const oppositeKing = this._data._bitboards[oppositeColor]['K']
-    const isCheck = false
-
-    if (this._data._turn === 'black')
-      this._data._fullMoveNumber++;
-
-    if (!isCapture && !isPawnMove) {
-      this._data._halfMoveClock++
-    } else {
-      this._data._halfMoveClock = 0
-    }
-
-    const isPromotion = this.isPromotion(toFlag, fromColor, fromPiece)
-
-    return {
-      isPromotion: isPromotion,
-      movedFrom: from,
-      movedTo: to,
-      isCheck: isCheck,
-      capturedPiece: toPiece,
-      isEnPassantMove: isEnPassantMove,
-      isCastlingMove: isCastling,
-      movedPiece: fromPiece,
-      changes: moveChanges
-    }
+  isAwaitingPromotionState() {
+    const color = this.flipColor(this._data._turn) // moving the pawn already changed turn
+    const pawns = this._data._bitboards[color]['P']
+    return this.hasPiece(PROMOTIONS_RANKS[color], pawns)
   }
 
-  isCheckmate() {
-    const blackKing = this._data._bitboards['black']['K']
-    if (this.isCheck(blackKing, 'black')) {
-      const moves = getAllLegalMoves(this, 'black')
-      if (moves.length === 0) return true;
-    }
-    const whiteKing = this._data._bitboards['white']['K']
-    if (this.isCheck(whiteKing, 'white')) {
-      const moves = getAllLegalMoves(this, 'white')
-      if (moves.length === 0) return true;
-    }
-    return false
+  isCheckmateState() {
+    if (!this.isCheckState()) return false
+
+    const playerColor = this._data._turn
+    const moves = getAllLegalMoves(this, playerColor)
+    return moves.length === 0
   }
 
   isStalemate() {
-    return false;
-    return getAllLegalMoves(this, this._data._turn).length === 0
+    if (this.isCheckState()) return false
+
   }
 
   getColor(flag: Int64) {
@@ -275,103 +184,11 @@ export default class ChessBoard {
     this._data._bitboards[toColor][toPiece] = this._data._bitboards[toColor][toPiece].xor(toFlag)
   }
 
-  isPromotion(toFlag: Int64, fromColor: Color, fromPiece: Piece) {
-    if (fromPiece !== 'P') return false;
-    if (fromColor === 'white') return this.hasPiece(WHITE_PROMOTION_RANK, toFlag)
-    return this.hasPiece(BLACK_PROMOTION_RANK, toFlag)
-  }
-
   applyPromotion(position: number, piece: PromotablePiece) {
     const flag = this.getFlag(position)
     const color: Color = this.getColor(flag)
     this._data._bitboards[color]['P'] = this._data._bitboards[color]['P'].xor(flag)
     this._data._bitboards[color][piece] = this._data._bitboards[color][piece].or(flag)
-
-    const oppositeColor = this.flipColor(color)
-    const oppositeKing = this._data._bitboards[oppositeColor]['K']
-    const isCheck = this.isCheck(oppositeKing, oppositeColor)
-    return isCheck
-  }
-  
-
-  undoMove(move: MoveResult) {
-    if (move == null) {
-      debugger;
-    }
-
-    if (move.isEnPassantMove) {
-      this.undoEnPassant(move)
-    }
-    if (move.capturedPiece != null) {
-      this.undoCapture(move)
-    }
-    if (move.isCastlingMove) {
-      this.undoCastlingMove(move)
-    }
-    this.undoPieceMove(move)
-    this.undoChanges(move)
-    this._data._turn = this.flipColor(this._data._turn)
-  }
-
-  undoCastlingMove(move: MoveResult) {
-    if (move.movedTo === SQUARE_INDEX.g1) {
-        // Undo white kingside castling (rook from f1 → h1)
-        this._data._bitboards['white']['R'] = this._data._bitboards['white']['R']
-            .xor(SQUARE_FLAGS.f1) // Remove rook from f1
-            .or(SQUARE_FLAGS.h1); // Restore rook to h1
-    } else if (move.movedTo === SQUARE_INDEX.c1) {
-        // Undo white queenside castling (rook from d1 → a1)
-        this._data._bitboards['white']['R'] = this._data._bitboards['white']['R']
-            .xor(SQUARE_FLAGS.d1) // Remove rook from d1
-            .or(SQUARE_FLAGS.a1); // Restore rook to a1
-    } else if (move.movedTo === SQUARE_INDEX.g8) {
-        // Undo black kingside castling (rook from f8 → h8)
-        this._data._bitboards['black']['R'] = this._data._bitboards['black']['R']
-            .xor(SQUARE_FLAGS.f8) // Remove rook from f8
-            .or(SQUARE_FLAGS.h8); // Restore rook to h8
-    } else if (move.movedTo === SQUARE_INDEX.c8) {
-        // Undo black queenside castling (rook from d8 → a8)
-        this._data._bitboards['black']['R'] = this._data._bitboards['black']['R']
-            .xor(SQUARE_FLAGS.d8) // Remove rook from d8
-            .or(SQUARE_FLAGS.a8); // Restore rook to a8
-    }
-  }
-
-
-  undoPieceMove(move: MoveResult) {
-    const color = this.flipColor(this._data._turn)
-    const toFlag = FLAGS_LOOKUP_INDEX[move.movedTo]
-    const fromFlag = FLAGS_LOOKUP_INDEX[move.movedFrom]
-    this._data._bitboards[color][move.movedPiece] = this._data._bitboards[color][move.movedPiece].xor(toFlag)
-    this._data._bitboards[color][move.movedPiece] = this._data._bitboards[color][move.movedPiece].or(fromFlag)
-  }
-
-  undoChanges(move: MoveResult) {
-    this._data._halfMoveClock = move.changes._halfMoveClock
-    this._data._fullMoveNumber = move.changes._fullMoveNumber
-    this._data._hasWhiteKingSideCastleRight = move.changes._hasWhiteKingSideCastleRight
-    this._data._hasWhiteQueenSideCastleRight = move.changes._hasWhiteQueenSideCastleRight
-    this._data._hasBlackKingSideCastleRight = move.changes._hasBlackKingSideCastleRight
-    this._data._hasBlackQueenSideCastleRight = move.changes._hasBlackQueenSideCastleRight
-    this._data._enPassantTargetSquare = move.changes._enPassantTargetSquare
-  }
-
-  undoCapture(move: MoveResult) {
-    const opponentColor = this._data._turn
-    if (move.capturedPiece == null) return
-    const flag = FLAGS_LOOKUP_INDEX[move.movedTo]
-    this._data._bitboards[opponentColor][move.capturedPiece] = this._data._bitboards[opponentColor][move.capturedPiece].or(flag)
-  }
-
-  undoEnPassant(move: MoveResult) {
-    const targetSquare = move.changes._enPassantTargetSquare
-    if (targetSquare === null) return
-    const moveColor = this.flipColor(this._data._turn)
-    if (moveColor === 'white') {
-      this._data._bitboards['black']['P'] = this._data._bitboards['black']['P'].or(targetSquare.shr(8))
-    } else {
-      this._data._bitboards['white']['P'] = this._data._bitboards['white']['P'].or(targetSquare.shl(8))
-    }
   }
 
   flipColor(color: Color) {
@@ -421,29 +238,3 @@ export default class ChessBoard {
     return boardView
   }
 }
-
-
-
-  export type MoveResult = {
-    isPromotion: boolean
-    movedFrom: number
-    movedTo: number
-    isCheck: boolean
-    capturedPiece: Piece | null
-    movedPiece: Piece
-    isEnPassantMove: boolean
-    isCastlingMove: boolean
-    changes: MoveChanges
-  }
-
-  export type MoveChanges = {
-    _halfMoveClock: number
-    _fullMoveNumber: number
-    _hasBlackKingSideCastleRight: boolean
-    _hasBlackQueenSideCastleRight: boolean
-    _hasWhiteKingSideCastleRight: boolean
-    _hasWhiteQueenSideCastleRight: boolean
-    _enPassantTargetSquare: Int64 | null
-  }
-
- 

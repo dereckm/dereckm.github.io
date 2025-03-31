@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import styles from './BoardView.module.css'
-import ChessBoard, { MoveResult } from './logic/game/board'
+import ChessBoard from './logic/game/board'
 import { Color, Piece, PromotablePiece } from './models/Piece'
 import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
 import { DEFAULT_BOARD } from './constants/fen'
-import { getLegalMoveIndicesAtIndex, getLegalMovesAtIndex } from './logic/move-generation/moves'
+import { getLegalMoveIndicesAtIndex, getLegalMovesAtIndex, getMove } from './logic/move-generation/moves'
+import { Move } from './logic/game/move'
 
 const checkSound = new Audio('move-check.mp3')
 
@@ -27,32 +28,49 @@ type GameState = {
 }
 
 export const Board = () => {
-  const [board, setBoard] = useState(new ChessBoard(DEFAULT_BOARD))
+  const [board, setBoard] = useState<ChessBoard>(new ChessBoard(DEFAULT_BOARD))
   const [playerColor, setPlayerColor] = useState<Color>('white')
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
   const [isPromoting, setIsPromoting] = useState<boolean>(false)
-  const [lastMoveResult, setLastMoveResult] = useState<MoveResult | null>(null)
+  const [lastMove, setLastMove] = useState<Move | null>(null)
   const [possibleMoves, setPossibleMoves] = useState<number[]>([])
   const [isBotActive, setIsBotActive] = useState(true)
   const [gameState, setGameState] = useState<GameState>({ isOver: false, winner: null })
   const [isGameStarted, setIsGameStarted] = useState(true)
 
+  const handleMove = (board: ChessBoard, move: Move) => {
+    const color = board._data._turn
+    move.apply(board)
+    if (board.isCheckState()) {
+      checkSound.play()
+    } 
+    if (board.isCheckmateState()) {
+      setGameState({ isOver: true, winner: color })
+    }
+    if (board.isStalemate()) {
+      setGameState({ isOver: true, winner: null })
+    }
+    if (board.isAwaitingPromotionState()) {
+      setIsPromoting(true)
+    }
+  }
+
   useEffect(() => {
     if (isBotActive && playerColor === 'black' && !isGameStarted) {
       const result = engine.findDeepeningOptimalMove(board, board.flipColor(playerColor))
-          if (result.move) {
-            const moveResult = board.applyMove(result.move?.from, result.move?.to)
-            if (moveResult.isCheck) {
-              checkSound.play()
-            }
-            setBoard(board.clone())
-            if (board.isCheckmate()) {
-              setGameState({ isOver: true, winner: 'black' })
-            } else if (board.isStalemate()) {
-              setGameState({ isOver: true, winner: null })
-            }
-          }
+      if (result.move) {
+        result.move.apply(board)
+        if (board.isCheckState()) {
+          checkSound.play()
+        }
+        setBoard(board.clone())
+        if (board.isCheckmateState()) {
+          setGameState({ isOver: true, winner: 'black' })
+        } else if (board.isStalemate()) {
+          setGameState({ isOver: true, winner: null })
+        }
+      }
     }
   }, [isBotActive, playerColor, isGameStarted])
 
@@ -61,43 +79,27 @@ export const Board = () => {
       setSelectedIndex(targetIndex)
     } else {
       const legalMoves = getLegalMoveIndicesAtIndex(board, selectedIndex)
+      console.log(legalMoves)
       if (legalMoves.includes(targetIndex)) {
-        const moveResult = board.applyMove(selectedIndex, targetIndex)
-        setLastMoveResult(moveResult)
-        if (moveResult.isCheck) {
-          checkSound.play()
-        }
-        if (moveResult.isPromotion) {
-          setIsPromoting(true)
-        }
-        if (board.isCheckmate()) {
-          setGameState({ isOver: true, winner: playerColor })
-          return
-        } else if (board.isStalemate()) {
-          setGameState({ isOver: true, winner: null })
-          return
-        }
+        const move = getMove(board, selectedIndex, targetIndex)
+        handleMove(board, move)
+        setLastMove(move)
         const clone = board.clone()
         setBoard(clone)
+        setPossibleMoves([])
+        setSelectedIndex(null)
 
         if (isBotActive) {
-          const result = engine.findDeepeningOptimalMove(clone, board.flipColor(playerColor))
-          if (result.move) {
-            const moveResult = clone.applyMove(result.move?.from, result.move?.to)
-            if (moveResult.isCheck) {
-              checkSound.play()
-            }
-            console.log(clone.isCheckmate())
-            if (clone.isCheckmate()) {
-              setGameState({ isOver: true, winner: 'black' })
-            } else if (clone.isStalemate()) {
-              setGameState({ isOver: true, winner: null })
-            }
+          // setTimeout to avoid state changes bundling without splitting into useEffect chains
+          setTimeout(() => {
+            const result = engine.findDeepeningOptimalMove(clone, board.flipColor(playerColor))
+            const move = result.move
+            if (move == null) throw new Error('Should be able to find a move here!')
+            handleMove(clone, move) 
             setBoard(clone.clone())
-          }
+          }, 0)
         }
       }
-      setSelectedIndex(null)
     }
   }
 
@@ -110,29 +112,26 @@ export const Board = () => {
   }, [board, selectedIndex])
 
   const handlePromotion = (piece: PromotablePiece) => {
-    if (lastMoveResult != null) {
-      board.applyPromotion(lastMoveResult.movedTo, piece)
+    if (lastMove != null) {
+      board.applyPromotion(lastMove.to, piece)
       setBoard(board.clone())
       setIsPromoting(false)
-      setLastMoveResult(null)
     }
   }
 
   const handleNextClick = () => {
     const result = engine.findDeepeningOptimalMove(board, board._data._turn)
-    if (result.move) {
-      const moveResult = board.applyMove(result.move?.from, result.move?.to)
-      if (moveResult.isCheck) {
-        checkSound.play()
-      }
-      setBoard(board.clone())
+    const move = result.move
+    if (move) {
+      handleMove(board, move)
+      setBoard(move?.result.board.clone())
     }
   }
 
   const handlePreviousClick = () => {
-    if (lastMoveResult != null) {
-      board.undoMove(lastMoveResult)
-      setBoard(board.clone())
+    if (lastMove != null) {
+      lastMove.undo()
+      setBoard(lastMove.result.board.clone())
     }
   }
 
@@ -145,12 +144,12 @@ export const Board = () => {
   }
 
   const boardView = board.toBoardView()
- 
+
   return (
     <>
       <div className={styles['chess-container']}>
         <div className={styles['chess-modal-container']}>
-          { isPromoting && (
+          {isPromoting && (
             <div className={styles['chess-modal']}>
               <div onClick={() => handlePromotion('N')} className={styles[`chess-promotion-choice-${board.flipColor(board._data._turn)}`]}><IconChessKnightFilled /></div>
               <div onClick={() => handlePromotion('B')} className={styles[`chess-promotion-choice-${board.flipColor(board._data._turn)}`]}><IconChessBishopFilled /></div>
@@ -158,33 +157,33 @@ export const Board = () => {
               <div onClick={() => handlePromotion('Q')} className={styles[`chess-promotion-choice-${board.flipColor(board._data._turn)}`]}><IconChessQueenFilled /></div>
             </div>
           )
-        }
-        {
-          gameState.isOver && (
-            <div className={styles['chess-modal']}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div>
-                  <p>
-                    Game over.
-                    <br />
-                    {gameState.winner === null ? 'Stalemate.' : `${gameState.winner} won.`}
-                  </p>
-                </div>
-                <div style={{display: 'flex', justifyContent: 'center'}}>
-                  <button className={styles['chessboard-control']} onClick={handleRestartClick}>Restart</button>
+          }
+          {
+            gameState.isOver && (
+              <div className={styles['chess-modal']}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div>
+                    <p>
+                      Game over.
+                      <br />
+                      {gameState.winner === null ? 'Stalemate.' : `${gameState.winner} won.`}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <button className={styles['chessboard-control']} onClick={handleRestartClick}>Restart</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        }
+            )
+          }
           <div className={styles['chessboard-controls']}>
-              <button className={isBotActive ? styles['chessboard-control-active'] : styles['chessboard-control']} onClick={() => {
-                setIsBotActive(prev => !prev)
-              }}>Bot: {isBotActive ? 'On' : 'Off'}
-              </button>
-              <button className={playerColor === 'black' ? styles['chessboard-control-active'] : styles['chessboard-control']} onClick={() => {
-                setPlayerColor(prev => board.flipColor(prev))
-              }}>Color: {playerColor}</button>
+            <button className={isBotActive ? styles['chessboard-control-active'] : styles['chessboard-control']} onClick={() => {
+              setIsBotActive(prev => !prev)
+            }}>Bot: {isBotActive ? 'On' : 'Off'}
+            </button>
+            <button className={playerColor === 'black' ? styles['chessboard-control-active'] : styles['chessboard-control']} onClick={() => {
+              setPlayerColor(prev => board.flipColor(prev))
+            }}>Color: {playerColor}</button>
           </div>
           <div key={selectedIndex} className={styles['board-container']}>
             <div className={styles.board}>
@@ -196,11 +195,11 @@ export const Board = () => {
             </div>
           </div>
           <div className={styles['chessboard-controls']}>
-              <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Undo</button>
-              <button className={styles['chessboard-control']} onClick={handleNextClick}>Next</button>
-              <button className={styles['chessboard-control']} onClick={() => {
-                navigator.clipboard.writeText(board.save())
-              }}>Copy</button>
+            <button className={styles['chessboard-control']} onClick={handlePreviousClick}>Undo</button>
+            <button className={styles['chessboard-control']} onClick={handleNextClick}>Next</button>
+            <button className={styles['chessboard-control']} onClick={() => {
+              navigator.clipboard.writeText(board.save())
+            }}>Copy</button>
           </div>
         </div>
       </div>
@@ -214,16 +213,16 @@ const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves:
       <span style={{ alignSelf: 'center', padding: '4px', color: '#FFF' }}>{8 - i}</span>
       {row.map((square, j) => {
         const pieceStyle = square.color === 'black' ? styles.black : styles.white;
-        const squareStyle = `${styles.square} ${((j + i) % 2) === 0 ? styles["square-white"] : styles["square-black"] }`
+        const squareStyle = `${styles.square} ${((j + i) % 2) === 0 ? styles["square-white"] : styles["square-black"]}`
         let style = `${pieceStyle} ${squareStyle}`
         if (moves.includes(square.index)) {
-            style += ` ${styles['candidate-move']}`
+          style += ` ${styles['candidate-move']}`
         }
         return (
-        <div key={`${i}_${j}`} onClick={() => onClick(square.index)} className={style}>
-          <span style={{padding: '8px'}}>{square.piece != null ? iconsLookup[square.piece] : <EmptySquare />}</span>
-        </div>
-      )
+          <div key={`${i}_${j}`} onClick={() => onClick(square.index)} className={style}>
+            <span style={{ padding: '8px' }}>{square.piece != null ? iconsLookup[square.piece] : <EmptySquare />}</span>
+          </div>
+        )
       })}
     </div>
   )
@@ -231,6 +230,6 @@ const BoardRow = ({ row, i, moves, onClick }: { row: Square[], i: number, moves:
 
 const EmptySquare = () => {
   return (
-    <div style={{width: '24px', height: '24px'}}/>
-    )
+    <div style={{ width: '24px', height: '24px' }} />
+  )
 }

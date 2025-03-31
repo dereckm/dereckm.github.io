@@ -1,18 +1,20 @@
 import { expect, test } from 'vitest'
 import ChessBoard from './board'
 import { SQUARE_INDEX } from '../../constants/squares'
-import { getLegalMoveIndicesAtIndex } from '../move-generation/moves'
+import { getLegalMoveIndicesAtIndex, getMove } from '../move-generation/moves'
 
 test('will consider promotion', () => {
-    const board = setUp('7p/1P6/8/2p5/4P3/8/P1P5/8 w - - 0 0')
-    const moveResult = board.applyMove(54, 62)
-    expect(true).toBe(moveResult.isPromotion)
+    const board = setUp('8/1P6/8/2p5/4P3/8/P1P5/8 w - - 0 0')
+    const move = getMove(board, 54, 62)
+    move.apply(board)
+    const isPromotion = board.isAwaitingPromotionState()
+    expect(true).toBe(isPromotion)
 })
 
 test('king cannot move towards another king', () => {
     const board = setUp('7p/1P6/4K3/2p5/4Pk2/8/P1P5/8 w - - 0 0')
     const moves = getLegalMoveIndicesAtIndex(board, 43)
-    expect(6).toBe(moves.length)
+    expect(moves.length).toBe(6)
 })
 
 test('king moves should generate correctly', () => {
@@ -63,7 +65,8 @@ test('should allow white king-side castling', () => {
 
 test('should apply white king-side castling correctly', () => {
     const board = setUp('rb1qk1br/pppppppp/3n4/8/8/4NP2/PPQPPBPP/RBN1K2R w Kkq - 0 0')
-    board.applyMove(3, 1)
+    const move = getMove(board, 3, 1)
+    move.apply(board)
     const newState = board.save()
     expect(newState).toBe('rb1qk1br/pppppppp/3n4/8/8/4NP2/PPQPPBPP/RBN2RK1 b kq - 1 1')
 })
@@ -78,7 +81,8 @@ test('should allow white queen-side castling', () => {
 
 test('should apply white queen-side castling correctly', () => {
     const board = setUp('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/R3K2R w KQk - 0 0')
-    board.applyMove(3, 5)
+    const move = getMove(board, 3, 5)
+    move.apply(board)
     const newState = board.save()
     expect(newState).toBe('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/2KR3R b k - 1 1')
 })
@@ -93,9 +97,8 @@ test('should allow black king-side castling', () => {
 
 test('should apply black king-side castling correctly', () => {
     const board = new ChessBoard('rnbqk2r/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR b KQkq - 0 0')
-    const pieces = board.getPiecesForColor('white')
-    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.e8)
-    board.applyMove(SQUARE_INDEX.e8, SQUARE_INDEX.g8)
+    const move = getMove(board, SQUARE_INDEX.e8, SQUARE_INDEX.g8)
+    move.apply(board)
     const newState = board.save()
     expect(newState).toBe('rnbq1rk1/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR w KQ - 1 0')
   })
@@ -118,7 +121,8 @@ test('should apply black king-side castling correctly', () => {
 
   test('should apply en-passant correctly', () => {
     const board = new ChessBoard('rnbqkbnr/pp1p1ppp/2p5/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 - 0 0')
-    board.applyMove(SQUARE_INDEX.f5, SQUARE_INDEX.e6)
+    const move = getMove(board, SQUARE_INDEX.f5, SQUARE_INDEX.e6)
+    move.apply(board)
     const newState = board.save()
     expect(newState).toBe('rnbqkbnr/pp1p1ppp/2p1P3/8/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 1')
   })
@@ -131,20 +135,22 @@ test('should apply black king-side castling correctly', () => {
 
   test('should consider checkmate correctly', () => {
     const board = new ChessBoard('2kr4/1pp2p1p/5p2/4p3/4b3/4q3/7P/3K4 w - - 2 27')
-    const isCheckmate = board.isCheckmate()
+    const isCheckmate = board.isCheckmateState()
     expect(isCheckmate).toBe(true)
   })
 
   test('should not trigger en-passant logic', () => {
     const board = new ChessBoard('rnbqkbnr/ppppp1pp/8/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 2')
-    board.applyMove(8, 16)
+    const move = getMove(board, 8, 16)
+    move.apply(board)
     const state = board.save()
     expect(state).toBe('rnbqkbnr/ppppp1pp/8/4Pp2/8/7P/PPPP1PP1/RNBQKBNR b KQkq - 0 3')
   })
 
   test('should consider pieces taken for castling rights', () => {
     const board = new ChessBoard('rnb1kbnr/pp1p1ppp/2p5/4pP2/8/4P2N/PPPPB1QP/RNBQK3 w KQkq - 0 3')
-    board.applyMove(SQUARE_INDEX.g2, SQUARE_INDEX.h1)
+    const move = getMove(board, SQUARE_INDEX.g2, SQUARE_INDEX.h1)
+    move.apply(board)
     expect(board._data._hasWhiteKingSideCastleRight).toBe(false)
   })
 
