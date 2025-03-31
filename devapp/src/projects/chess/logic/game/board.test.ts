@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import ChessBoard from './board'
-import { SQUARE_INDEX } from './constants/squares'
+import { SQUARE_INDEX } from '../../constants/squares'
 
 test('will consider promotion', () => {
     const board = setUp('7p/1P6/8/2p5/4P3/8/P1P5/8 w - - 0 0')

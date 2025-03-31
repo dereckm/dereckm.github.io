@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import ChessBoard from "./board"
+import ChessBoard from "./logic/game/board"
 import { SQUARE_INDEX } from "./constants/squares"
 import Engine from "./engine"
 

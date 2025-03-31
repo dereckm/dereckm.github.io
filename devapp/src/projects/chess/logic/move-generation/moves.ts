@@ -1,6 +1,6 @@
 import Int64, { ONE, ZERO } from '../../../../logic/Int64';
 import { Color } from '../../models/Piece'
-import ChessBoard from '../../board';
+import ChessBoard from '../game/board';
 import { Piece } from '../../models/Piece'
 import { SQUARE_FLAGS, SQUARE_INDEX } from '../../constants/squares';
 

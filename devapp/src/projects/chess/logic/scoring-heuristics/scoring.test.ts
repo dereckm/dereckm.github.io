@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import ChessBoard from "../../board"
+import ChessBoard from "../game/board"
 import { DEFAULT_BOARD } from "../../constants/fen"
 import { calculateOverallScoreDelta, calculatePiecesScore, calculateScoreDelta } from "./scoring"
 

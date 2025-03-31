@@ -1,4 +1,4 @@
-import ChessBoard, { MoveResult } from "./board";
+import ChessBoard, { MoveResult } from "./logic/game/board";
 import { Color, PromotablePiece } from "./models/Piece";
 import { calculateOverallScoreDelta } from "./logic/scoring-heuristics/scoring";
 import { getAllLegalMoves, CandidateMove } from "./logic/move-generation/moves";

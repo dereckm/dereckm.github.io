@@ -1,4 +1,4 @@
-import ChessBoard from "../../board"
+import ChessBoard from "../game/board"
 import { Color } from '../../models/Piece'
 
 export function calculatePiecesScore(board: ChessBoard, color: Color) {

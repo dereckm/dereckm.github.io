@@ -1,16 +1,18 @@
-import Int64, { ZERO, ONE } from "../../logic/Int64"
-import { Color, Piece, PromotablePiece } from './models/Piece'
-import { Square } from './models/Square'
+import Int64, { ZERO, ONE } from "../../../../logic/Int64"
+import { Color, Piece, PromotablePiece } from '../../models/Piece'
+import { Square } from '../../models/Square'
 import { 
   checkPawnMoves, checkKnightMoves, checkBishopMoves, 
   checkRookMoves, checkQueenMoves, checkKingMoves,
   getAllLegalMoves
- } from './logic/move-generation/moves'
-import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_FLAGS, SQUARE_INDEX } from "./constants/squares"
-import { FENParser } from "./utilities/parse-fen"
-import { BoardModel } from "./models/BoardModel"
+ } from '../move-generation/moves'
+import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"
+import { FENParser } from "../../utilities/parse-fen"
+import { BoardModel } from "../../models/BoardModel"
+import { FenWriter } from "../../utilities/fen-writer"
 
 const fenParser = new FENParser()
+const fenWriter = new FenWriter()
 
 const SEVEN = 7
 const NINE = 9
@@ -19,6 +21,7 @@ const WHITE_PROMOTION_RANK = Int64.fromString("0b1111111100000000000000000000000
 const BLACK_PROMOTION_RANK = Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111")
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
 
 export default class ChessBoard {
   _history: string[] = []
@@ -30,65 +33,17 @@ export default class ChessBoard {
   }
 
   clone() {
-    const b = new ChessBoard(this.save())
+    const b = new ChessBoard(fenWriter.write(this))
     b._history = [...this._history]
     return b
   }
 
-  save(asHash: boolean = false) {
-    let fen = ''
-    let count = 0;
-    const whitePieces = this.getPiecesForColor('white')
-    for(let i = 63; i >= 0; i--) {
-      const flag = this.getFlag(i)
-      const piece = this.getPiece(flag)
-      
-      if (piece != null) {
-        const color = this.hasPiece(whitePieces, flag) ? 'white' : 'black'
-        if (count !== 0) fen += count;
-        fen += color === 'white' ? piece : piece.toLowerCase()
-        count = 0;
-      } else {
-        count++;
-      }
-      if (i % 8 === 0 && i !== 0) {
-         if(count !== 0) fen += count;
-         fen += '/'
-         count = 0;
-      }
-    }
-    if (count > 0 ) fen += count
-    fen += this._data._turn === 'white' ? ' w' : ' b'
-    let castlingRights = ''
-    if (this._data._hasWhiteKingSideCastleRight) castlingRights += 'K'
-    if (this._data._hasWhiteQueenSideCastleRight) castlingRights += 'Q'
-    if (this._data._hasBlackKingSideCastleRight) castlingRights += 'k'
-    if (this._data._hasBlackQueenSideCastleRight) castlingRights += 'q'
-    if (castlingRights === '') castlingRights = '-'
-    fen += ` ${castlingRights}`
-
-    if (this._data._enPassantTargetSquare != null) {
-      fen += ` ${INDEX_TO_SQUARE[this._data._enPassantTargetSquare.log2()]}`
-    } else {
-      fen += ' -'
-    }
-    if (asHash) return fen;
-    fen += ` ${this._data._halfMoveClock}`;
-    fen += ` ${this._data._fullMoveNumber}`
-
-    return fen
+  save() {
+    return fenWriter.write(this)
   }
 
   hash() {
-    return this.save(true)
-  }
-
-  toBinaryString(input: string, char: string) {
-    let binaryString = '0b'
-    for(const c of input) {
-      binaryString += (c === char ? '1' : '0')
-    }
-    return binaryString
+    return fenWriter.writeWithoutMoveCounters(this)
   }
   
   getFlag(index: number) {
