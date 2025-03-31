@@ -79,7 +79,6 @@ export const Board = () => {
       setSelectedIndex(targetIndex)
     } else {
       const legalMoves = getLegalMoveIndicesAtIndex(board, selectedIndex)
-      console.log(legalMoves)
       if (legalMoves.includes(targetIndex)) {
         const move = getMove(board, selectedIndex, targetIndex)
         handleMove(board, move)

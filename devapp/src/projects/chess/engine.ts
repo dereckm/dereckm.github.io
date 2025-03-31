@@ -43,11 +43,13 @@ export default class Engine {
     _prunedNodes = 0;
     _timeoutMs = 0;
     _transpositionTable = new TranspositionTable();
+    _cacheHits = 0;
 
     findDeepeningOptimalMove(board: ChessBoard, color: Color, timeoutMs = TIMEOUT_MS): ScoredMove {
         this._timer = Date.now();
         this._exploredPaths = 0;
         this._prunedNodes = 0;
+        this._cacheHits = 0;
         let depth = 1;
         let bestScore = color === "white" ? -Infinity : Infinity;
         let bestMove: Move | null = null;
@@ -88,10 +90,16 @@ export default class Engine {
         const hash = board.hash();
         const ttEntry = this._transpositionTable.get(hash);
         if (ttEntry && ttEntry.depth >= depth) {
-            if (ttEntry.flag === TT_FLAG.EXACT) return ttEntry.value;
+            if (ttEntry.flag === TT_FLAG.EXACT) {
+                this._cacheHits++;
+                return ttEntry.value
+            };
             if (ttEntry.flag === TT_FLAG.LOWERBOUND) alpha = Math.max(alpha, ttEntry.value);
             else if (ttEntry.flag === TT_FLAG.UPPERBOUND) beta = Math.min(beta, ttEntry.value);
-            if (alpha >= beta) return ttEntry.value;
+            if (alpha >= beta) {
+                this._cacheHits++;
+                return ttEntry.value;
+            }
         }
 
         if (depth === 0) {
@@ -132,6 +140,7 @@ export default class Engine {
         console.log(`time: ${Date.now() - this._timer}`);
         console.log(`max depth: ${depth}`);
         console.log(`moves explored: ${this._exploredPaths}`);
+        console.log(`transposition table hits: ${this._cacheHits}`)
         console.log(`branches pruned: ${this._prunedNodes} (${((this._prunedNodes / (this._prunedNodes + this._exploredPaths)) * 100.0).toFixed(2)}%)`);
         console.log(`score: ${score}`);
         console.log("#################");
