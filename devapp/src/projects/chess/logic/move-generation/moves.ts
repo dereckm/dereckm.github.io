@@ -134,24 +134,23 @@ function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: In
     return moves
 }
 
-export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
+export function checkKingMoves(board: ChessBoard, allPieces: Int64, flag: Int64, color: Color) {
     if (flag.isZero()) return ZERO
 
     const index = flag.log2()
     let moves = kingMoves[index]
-    const pieces = board.getAllPieces()
     if (color === 'white') {
-        if (board._data._hasWhiteKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f1) && !pieces.isBitSet(SQUARE_INDEX.g1)) {
+        if (board._data._hasWhiteKingSideCastleRight && !allPieces.isBitSet(SQUARE_INDEX.f1) && !allPieces.isBitSet(SQUARE_INDEX.g1)) {
             moves = moves.or(SQUARE_FLAGS.g1)
         }
-        if (board._data._hasWhiteQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b1) && !pieces.isBitSet(SQUARE_INDEX.c1) && !pieces.isBitSet(SQUARE_INDEX.d1)) {
+        if (board._data._hasWhiteQueenSideCastleRight && !allPieces.isBitSet(SQUARE_INDEX.b1) && !allPieces.isBitSet(SQUARE_INDEX.c1) && !allPieces.isBitSet(SQUARE_INDEX.d1)) {
             moves = moves.or(SQUARE_FLAGS.c1)
         }
     } else if (color === 'black') {
-        if (board._data._hasBlackKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f8) && !pieces.isBitSet(SQUARE_INDEX.g8)) {
+        if (board._data._hasBlackKingSideCastleRight && !allPieces.isBitSet(SQUARE_INDEX.f8) && !allPieces.isBitSet(SQUARE_INDEX.g8)) {
             moves = moves.or(SQUARE_FLAGS.g8)
         }
-        if (board._data._hasBlackQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b8) && !pieces.isBitSet(SQUARE_INDEX.c8) && !pieces.isBitSet(SQUARE_INDEX.d8)) {
+        if (board._data._hasBlackQueenSideCastleRight && !allPieces.isBitSet(SQUARE_INDEX.b8) && !allPieces.isBitSet(SQUARE_INDEX.c8) && !allPieces.isBitSet(SQUARE_INDEX.d8)) {
             moves = moves.or(SQUARE_FLAGS.c8)
         }
     }
@@ -331,13 +330,14 @@ function getMoveIndexes(board: ChessBoard, fromIndex: number, sameColorPieces: I
 }
 
 export function getCheckingMoves(board: ChessBoard, king: Int64, color: Color, pieces: Int64, opponentPieces: Int64): Record<Piece, Int64> {
+    const pawnMoves = board.checkPawnCapturesForCheck(king, color)
+    const knightMoves = checkKnightMoves(board, king, color)
     const bishopMoves = checkBishopMoves(board, king, opponentPieces, pieces)
     const rookMoves = checkRookMoves(board, king, opponentPieces, pieces)
-    const kingMoves = checkKingMoves(board, king, color)
-    const pawnMoves = board.checkPawnCapturesForCheck(king, color)
+    const kingMoves = checkKingMoves(board, pieces.or(opponentPieces), king, color)
     return {
         'P': pawnMoves,
-        'N': checkKnightMoves(board, king, color),
+        'N': knightMoves,
         'B': bishopMoves,
         'R': rookMoves,
         'Q': bishopMoves.or(rookMoves),
@@ -356,7 +356,7 @@ function checkMoves(board: ChessBoard, fromIndex: number, sameColorPieces: Int64
         case 'B': moves = checkBishopMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
         case 'R': moves = checkRookMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
         case 'Q': moves = checkQueenMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
-        case 'K': moves = checkKingMoves(board, flag, color); break;
+        case 'K': moves = checkKingMoves(board, sameColorPieces.or(oppositeColorPieces), flag, color); break;
     }
     return moves
 }

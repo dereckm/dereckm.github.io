@@ -1,13 +1,11 @@
-import Int64, { ZERO, ONE } from "../../../../logic/Int64"
+import Int64, { ZERO } from "../../../../logic/Int64"
 import { Color, Piece, PromotablePiece } from '../../models/Piece'
 import { Square } from '../../models/Square'
 import { 
-  checkPawnMoves, checkKnightMoves, checkBishopMoves, 
-  checkRookMoves, checkQueenMoves, checkKingMoves,
   getAllLegalMoves,
   getCheckingMoves
  } from '../move-generation/moves'
-import { FLAGS_LOOKUP_INDEX, INDEX_TO_SQUARE, SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"
+import { FLAGS_LOOKUP_INDEX, SQUARE_INDEX } from "../../constants/squares"
 import { FENParser } from "../../utilities/parse-fen"
 import { BoardModel } from "../../models/BoardModel"
 import { FenWriter } from "../../utilities/fen-writer"
