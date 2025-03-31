@@ -6,6 +6,7 @@ import { Square } from './models/Square'
 import { IconChessBishopFilled, IconChessFilled, IconChessKingFilled, IconChessKnightFilled, IconChessQueenFilled, IconChessRookFilled } from '@tabler/icons-react'
 import Engine from './engine'
 import { DEFAULT_BOARD } from './constants/fen'
+import { getLegalMoveIndicesAtIndex, getLegalMovesAtIndex } from './logic/move-generation/moves'
 
 const checkSound = new Audio('move-check.mp3')
 
@@ -59,7 +60,7 @@ export const Board = () => {
     if (selectedIndex === null) {
       setSelectedIndex(targetIndex)
     } else {
-      const legalMoves = board.getMoveIndexesFromIndex(selectedIndex)
+      const legalMoves = getLegalMoveIndicesAtIndex(board, selectedIndex)
       if (legalMoves.includes(targetIndex)) {
         const moveResult = board.applyMove(selectedIndex, targetIndex)
         setLastMoveResult(moveResult)
@@ -102,7 +103,7 @@ export const Board = () => {
 
   useEffect(() => {
     if (selectedIndex != null) {
-      setPossibleMoves(board.getMoveIndexesFromIndex(selectedIndex))
+      setPossibleMoves(getLegalMoveIndicesAtIndex(board, selectedIndex))
     } else {
       setPossibleMoves([])
     }

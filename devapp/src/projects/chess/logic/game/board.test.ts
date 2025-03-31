@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 import ChessBoard from './board'
 import { SQUARE_INDEX } from '../../constants/squares'
+import { getLegalMoveIndicesAtIndex } from '../move-generation/moves'
 
 test('will consider promotion', () => {
     const board = setUp('7p/1P6/8/2p5/4P3/8/P1P5/8 w - - 0 0')
@@ -10,13 +11,13 @@ test('will consider promotion', () => {
 
 test('king cannot move towards another king', () => {
     const board = setUp('7p/1P6/4K3/2p5/4Pk2/8/P1P5/8 w - - 0 0')
-    const moves = board.getMoveIndexesFromIndex(43)
+    const moves = getLegalMoveIndicesAtIndex(board, 43)
     expect(6).toBe(moves.length)
 })
 
 test('king moves should generate correctly', () => {
     const board = setUp('7p/1P6/4K3/2p3k1/4P3/8/P1P5/8 b - - 0 0')
-    const moves = board.getMoveIndexesFromIndex(33)
+    const moves = getLegalMoveIndicesAtIndex(board, 33)
     expect(moves.length).toBe(6)
     expect(moves).toContain(24)
 })
@@ -24,22 +25,22 @@ test('king moves should generate correctly', () => {
 
 test('pawns should not capture via going out of bounds', () => {
     const board = setUp('rnbqkb1r/pppppppp/5n2/P7/8/8/1PPPPPPP/RNBQKBNR b - - 0 0')
-    const moves = board.getMoveIndexesFromIndex(48)
+    const moves = getLegalMoveIndicesAtIndex(board, 48)
     expect(moves.length).toBe(2)
 })
 
 test('check moves should not have side effects', () => {
     const board = setUp('2b5/1p2k2r/r2qp2n/p1pP1p1N/P2B4/3PR1PB/3KP2P/1N4QR w - - 0 0')
     const pieces = board.getPiecesForColor('white')
-    board.getMoveIndexesFromIndex(32)
-    board.getMoveIndexesFromIndex(17)
+    getLegalMoveIndicesAtIndex(board, 32)
+    getLegalMoveIndicesAtIndex(board, 17)
     expect(board._data._turn).toBe('white')
 })
 
 test('rook should not go through a pawn', () => {
     const board = setUp('2b5/1p2k2r/r7/p4p2/P2P1N2/3K4/4P2P/1N5Q b - - 0 0')
     const pieces = board.getPiecesForColor('black')
-    const moves = board.getMoveIndexesFromIndex(48)
+    const moves = getLegalMoveIndicesAtIndex(board, 48)
     expect(moves.length).toBe(8)
     expect(moves).not.toContain(0)
 })
@@ -47,7 +48,7 @@ test('rook should not go through a pawn', () => {
 test('rook should be able to reach the edge', () => {
     const board = setUp('2b5/1p2k2r/r7/p4p2/P2P1N2/3K4/4P2P/1N5Q b - - 0 0')
     const pieces = board.getPiecesForColor('black')
-    const moves = board.getMoveIndexesFromIndex(47)
+    const moves = getLegalMoveIndicesAtIndex(board, 47)
     expect(moves.length).toBe(9)
     expect(moves).toContain(63)
 })
@@ -55,7 +56,7 @@ test('rook should be able to reach the edge', () => {
 test('should allow white king-side castling', () => {
     const board = setUp('rb1qk1br/pppppppp/3n4/8/8/4NP2/PPQPPBPP/RBN1K2R w Kkq - 0 0')
     const pieces = board.getPiecesForColor('white')
-    const moves = board.getMoveIndexesFromIndex(3)
+    const moves = getLegalMoveIndicesAtIndex(board, 3)
     expect(moves.length).toBe(3)
     expect(moves).toContain(1)
 })
@@ -70,7 +71,7 @@ test('should apply white king-side castling correctly', () => {
 test('should allow white queen-side castling', () => {
     const board = setUp('rb3kbr/pppp1ppp/3n1q2/4p3/8/P2NNP2/BPQPPBPP/R3K2R w KQk - 0 0')
     const pieces = board.getPiecesForColor('white')
-    const moves = board.getMoveIndexesFromIndex(3)
+    const moves = getLegalMoveIndicesAtIndex(board, 3)
     expect(moves.length).toBe(4)
     expect(moves).toContain(5)
 })
@@ -85,7 +86,7 @@ test('should apply white queen-side castling correctly', () => {
 test('should allow black king-side castling', () => {
   const board = new ChessBoard('rnbqk2r/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR b KQkq - 0 0')
   const pieces = board.getPiecesForColor('black')
-  const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.e8)
+  const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.e8)
   expect(moves.length).toBe(3)
   expect(moves).toContain(SQUARE_INDEX.g8)  
 })
@@ -93,7 +94,7 @@ test('should allow black king-side castling', () => {
 test('should apply black king-side castling correctly', () => {
     const board = new ChessBoard('rnbqk2r/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR b KQkq - 0 0')
     const pieces = board.getPiecesForColor('white')
-    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.e8)
+    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.e8)
     board.applyMove(SQUARE_INDEX.e8, SQUARE_INDEX.g8)
     const newState = board.save()
     expect(newState).toBe('rnbq1rk1/pppp1ppp/3bpn2/8/4P3/5PPP/PPPP4/RNBQKBNR w KQ - 1 0')
@@ -102,7 +103,7 @@ test('should apply black king-side castling correctly', () => {
   test('should allow black queen-side castling', () => {
     const board = new ChessBoard('r3kbnr/pppqpppp/2np4/5b2/8/1PPPPP2/P5PP/RNBQKBNR b KQkq - 0 0')
     const pieces = board.getPiecesForColor('black')
-    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.e8)
+    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.e8)
     expect(moves.length).toBe(2)
     expect(moves).toContain(SQUARE_INDEX.c8)  
   })
@@ -110,7 +111,7 @@ test('should apply black king-side castling correctly', () => {
   test('should allow en-passant', () => {
     const board = new ChessBoard('rnbqkbnr/pp1p1ppp/2p5/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 - 0 0')
     const pieces = board.getPiecesForColor('white')
-    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.f5)
+    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.f5)
     expect(moves.length).toBe(2)
     expect(moves).toContain(SQUARE_INDEX.e6)
   })
@@ -124,7 +125,7 @@ test('should apply black king-side castling correctly', () => {
 
   test('should have moves left to play', () => {
     const board = new ChessBoard('5rk1/1pp2ppp/5qb1/4P3/1n4P1/2NP3N/1PpBB2P/r1K2RR1 w - - 1 19')
-    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.c3)
+    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.c3)
     expect(moves.length).toBe(1)
   })
 

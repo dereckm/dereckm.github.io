@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeAll, beforeEach } from 'vitest'
 import ChessBoard from "../game/board"
-import { generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves, checkRookMoves, getMoveIndexesFromFlag } from "./moves"
+import { generateKnightMoves, toIndex, toCoords, generateKingMoves, checkPawnMoves, checkRookMoves, getMoveIndexesFromFlag, getLegalMoveIndicesAtIndex } from "./moves"
 import Int64, { ONE } from "../../../../logic/Int64"
 import { DEFAULT_BOARD } from "../../constants/fen"
 import { SQUARE_FLAGS, SQUARE_INDEX } from "../../constants/squares"
@@ -252,7 +252,7 @@ describe('checkPawnMoves', () => {
 
   test('should allow capturing bishop', () => {
     const board = new ChessBoard('rnbqkb1R/ppppp2p/8/8/8/8/PPQP1PPP/RNB1KBNR w KQkq - 0 6')
-    const moves = board.getMoveIndexesFromIndex(SQUARE_INDEX.h8)
+    const moves = getLegalMoveIndicesAtIndex(board, SQUARE_INDEX.h8)
     expect(moves.length).toBe(3)
     expect(moves).toContain(SQUARE_INDEX.f8)
   })

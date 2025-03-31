@@ -85,45 +85,6 @@ export default class ChessBoard {
     return this.getPiecesForColor('white').or(this.getPiecesForColor('black'))
   }
 
-  checkMoves(fromIndex: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
-    const flag = this.getFlag(fromIndex)
-    const color = this._data._turn
-    const piece = this.getPiece(flag)
-    let moves = ZERO
-    switch (piece) {
-      case 'P': moves = checkPawnMoves(this, flag, color); break;
-      case 'N': moves = checkKnightMoves(this, flag, color); break;
-      case 'B': moves = checkBishopMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
-      case 'R': moves = checkRookMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
-      case 'Q': moves = checkQueenMoves(this, flag, oppositeColorPieces, sameColorPieces); break;
-      case 'K': moves = checkKingMoves(this, flag, color); break;
-    }
-    if (moves.isZero()) return moves;
-    moves = this.checkMovesForCheck(moves, color, fromIndex)
-    return moves
-  }
-
-  /**
-   * Backpropagate from the king to check if a piece can cause check
-   * @param king 
-   * @param color 
-   * @returns lookup of positions that can cause check for each piece.
-   */
-  getCheckingMoves(king: Int64, color: Color, sameColorPieces: Int64, oppositeColorPieces: Int64): Record<Piece, Int64> {
-    const bishopMoves = checkBishopMoves(this, king, oppositeColorPieces, sameColorPieces)
-    const rookMoves = checkRookMoves(this, king, oppositeColorPieces, sameColorPieces)
-    const kingMoves = checkKingMoves(this, king, color)
-    const pawnMoves = this.checkPawnCapturesForCheck(king, color)
-    return {
-      'P': pawnMoves,
-      'N': checkKnightMoves(this, king, color),
-      'B': bishopMoves,
-      'R': rookMoves,
-      'Q': bishopMoves.or(rookMoves),
-      'K': kingMoves
-    }
-  }
-
   checkPawnCapturesForCheck(king: Int64, color: Color) {
     const index = king.log2()
     const x = index % 8
@@ -137,73 +98,6 @@ export default class ChessBoard {
       if (x < 7 && y > 1) moves = moves.or(king.shr(SEVEN))
     }
     return moves
-  }
-
-  checkMovesForCheck(moves: Int64, color: Color, fromIndex: number) {
-    if (moves.isZero()) return moves
-
-    const oppositeColor = this.flipColor(color)
-    let legalMoves = new Int64(0, 0)
-    for(let moveIndex = 0; moveIndex < 64; moveIndex++) {
-      const currentMove = this.getFlag(moveIndex)
-      if (!this.hasPiece(moves, currentMove)) continue;
-      legalMoves.mutate_or(this.testMoveForCheck(
-        fromIndex,
-        moveIndex,
-        color,
-        oppositeColor,
-        currentMove,
-      ))
-    }
-    return legalMoves
-  }
-
-  testMoveForCheck(
-      index: number, 
-      toIndex: number, 
-      color: Color,
-      oppositeColor: Color,
-      currentMove: Int64) {
-    const moveResult = this.applyMove(index, toIndex)
-    const sameColorPieces = this.getPiecesForColor(color)
-    const oppositeColorPieces = this.getPiecesForColor(this.flipColor(color))
-    const king =  this._data._bitboards[color]['K']
-    const checkingMoves = this.getCheckingMoves(king, color, sameColorPieces, oppositeColorPieces)
-
-    const oppositePieces = this._data._bitboards[oppositeColor]
-    const isCheck = this.hasPiece(checkingMoves['P'], oppositePieces['P']) 
-      || this.hasPiece(checkingMoves['N'], oppositePieces['N'])
-      || this.hasPiece(checkingMoves['B'], oppositePieces['B'])
-      || this.hasPiece(checkingMoves['R'], oppositePieces['R'])
-      || this.hasPiece(checkingMoves['Q'], oppositePieces['Q'])
-      || this.hasPiece(checkingMoves['K'], oppositePieces['K'])
-
-    this.undoMove(moveResult)
-
-    if (!isCheck) return currentMove
-    return ZERO
-  }
-
-  getMoveIndexesFromIndex(index: number) {
-    const whitePieces = this.getPiecesForColor('white')
-    const fromFlag = this.getFlag(index)
-    const color: Color = this.hasPiece(whitePieces, fromFlag) ? 'white' : 'black'
-    if (color !== this._data._turn) return []
-    const pieces = color === 'white' ? whitePieces : this.getPiecesForColor('black')
-    const oppositePieces = color === 'white' ? this.getPiecesForColor('black') : whitePieces
-    return this.getMoveIndexes(index, pieces, oppositePieces)
-  }
-
-  getMoveIndexes(fromIndex: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
-    const moves = this.checkMoves(fromIndex, sameColorPieces, oppositeColorPieces)
-    const indexes = []
-    for (let i = 0; i < 64; i++) {
-      const toFlag = this.getFlag(i)
-      if (this.hasPiece(moves, toFlag)) {
-        indexes.push(i)
-      }
-    }
-    return indexes
   }
 
   applyCastlingMove(toIndex: number) {

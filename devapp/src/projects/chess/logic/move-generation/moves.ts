@@ -10,29 +10,29 @@ const kingMoves = generateKingMoves()
 const WHITE_PAWN_START = Int64.fromString('0b1111111100000000')
 const BLACK_PAWN_START = Int64.fromString("0b0000000011111111000000000000000000000000000000000000000000000000")
 const rookEdges = [
-  Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000"),
-  Int64.fromString("0b0000000100000001000000010000000100000001000000010000000100000001"),
-  Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111"),
-  Int64.fromString("0b1000000010000000100000001000000010000000100000001000000010000000"),
+    Int64.fromString("0b1111111100000000000000000000000000000000000000000000000000000000"),
+    Int64.fromString("0b0000000100000001000000010000000100000001000000010000000100000001"),
+    Int64.fromString("0b0000000000000000000000000000000000000000000000000000000011111111"),
+    Int64.fromString("0b1000000010000000100000001000000010000000100000001000000010000000"),
 ]
 
 const bishopEdges = [
-  Int64.fromString("0b1111111110000000100000001000000010000000100000001000000010000000"),
-  Int64.fromString("0b1111111100000001000000010000000100000001000000010000000100000001"),
-  Int64.fromString("0b1000000010000000100000001000000010000000100000001000000011111111"),
-  Int64.fromString("0b0000000100000001000000010000000100000001000000010000000111111111"),
+    Int64.fromString("0b1111111110000000100000001000000010000000100000001000000010000000"),
+    Int64.fromString("0b1111111100000001000000010000000100000001000000010000000100000001"),
+    Int64.fromString("0b1000000010000000100000001000000010000000100000001000000011111111"),
+    Int64.fromString("0b0000000100000001000000010000000100000001000000010000000111111111"),
 ]
 
 const queenEdges = [
-  ...rookEdges,
-  ...bishopEdges
+    ...rookEdges,
+    ...bishopEdges
 ]
 
 type Coords = [x: number, y: number]
 
 export function generateKingMoves() {
     const lookup: Record<number, Int64> = {}
-    for(let i = 0; i < 64; i++) {
+    for (let i = 0; i < 64; i++) {
         const { x, y } = toCoords(i)
         let moves = ZERO
         let candidateMoves: Coords[] = [
@@ -46,7 +46,7 @@ export function generateKingMoves() {
             [x - 1, y + 1],
         ]
         candidateMoves = candidateMoves.filter(isInBounds)
-        for(const move of candidateMoves) {
+        for (const move of candidateMoves) {
             const [x, y] = move
             const index = toIndex(x, y)
             moves = moves.or(ONE.shl(index))
@@ -63,7 +63,7 @@ function isInBounds(move: Coords) {
 
 export function generateKnightMoves() {
     const lookup: Record<number, Int64> = {}
-    for(let i = 0; i < 64; i++) {
+    for (let i = 0; i < 64; i++) {
         const { x, y } = toCoords(i)
         let moves = ZERO
         let candidateMoves: Coords[] = [
@@ -77,7 +77,7 @@ export function generateKnightMoves() {
             [x - 2, y + 1]
         ]
         candidateMoves = candidateMoves.filter(isInBounds)
-        for(const move of candidateMoves) {
+        for (const move of candidateMoves) {
             const [x, y] = move
             const index = toIndex(x, y)
             moves = moves.or(ONE.shl(index))
@@ -101,7 +101,7 @@ export function getMoveIndexesFromFlag(flag: Int64) {
     if (flag.isZero()) return []
     if (flag.isFlag()) return [flag.log2()]
     const indexes = []
-    for(let i = 0; i < 64; i++) {
+    for (let i = 0; i < 64; i++) {
         if (!(flag.and(ONE.shl(i)).isZero())) {
             indexes.push(i)
         }
@@ -112,13 +112,13 @@ export function getMoveIndexesFromFlag(flag: Int64) {
 function checkRangeMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64, edges: Int64[], directions: ((flag: Int64, i: number) => Int64)[]) {
     let moves = ZERO
 
-    for(let direction = 0; direction < directions.length; direction++) {
+    for (let direction = 0; direction < directions.length; direction++) {
         const edge = edges[direction]
         if (board.hasPiece(edge, flag)) // we're already at the edge
             continue
-        
+
         const moveFunction = directions[direction]
-        for(let i = 1; i <= 7; i++) {
+        for (let i = 1; i <= 7; i++) {
             const pos = moveFunction(flag, i)
             // we're blocked by our own piece
             if (board.hasPiece(piecesForColor, pos)) {
@@ -142,14 +142,14 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
     if (color === 'white') {
         if (board._data._hasWhiteKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f1) && !pieces.isBitSet(SQUARE_INDEX.g1)) {
             moves = moves.or(SQUARE_FLAGS.g1)
-        } 
+        }
         if (board._data._hasWhiteQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b1) && !pieces.isBitSet(SQUARE_INDEX.c1) && !pieces.isBitSet(SQUARE_INDEX.d1)) {
             moves = moves.or(SQUARE_FLAGS.c1)
         }
     } else if (color === 'black') {
         if (board._data._hasBlackKingSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.f8) && !pieces.isBitSet(SQUARE_INDEX.g8)) {
             moves = moves.or(SQUARE_FLAGS.g8)
-        } 
+        }
         if (board._data._hasBlackQueenSideCastleRight && !pieces.isBitSet(SQUARE_INDEX.b8) && !pieces.isBitSet(SQUARE_INDEX.c8) && !pieces.isBitSet(SQUARE_INDEX.d8)) {
             moves = moves.or(SQUARE_FLAGS.c8)
         }
@@ -160,53 +160,53 @@ export function checkKingMoves(board: ChessBoard, flag: Int64, color: Color) {
         console.log(index)
         console.log(flag.toString(2))
     }
-        
+
     const validMoves = moves.and(stepOvers.not())
     return validMoves
-  }
+}
 
 
 export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
     return checkBishopMoves(board, flag, oppositeColorPieces, piecesForColor)
         .or(checkRookMoves(board, flag, oppositeColorPieces, piecesForColor))
-  }
+}
 
 
-  const rookDirections = [
+const rookDirections = [
     (flag: Int64, i: number) => flag.shl(i * 8),
     (flag: Int64, i: number) => flag.shr(i * 1),
     (flag: Int64, i: number) => flag.shr(i * 8),
     (flag: Int64, i: number) => flag.shl(i * 1)
-  ]
-  export function checkRookMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
-     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, rookEdges, rookDirections)
-  }
+]
+export function checkRookMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
+    return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, rookEdges, rookDirections)
+}
 
-  const bishopDirections = [
+const bishopDirections = [
     (flag: Int64, i: number) => flag.shl(i * 9),
     (flag: Int64, i: number) => flag.shl(i * 7),
     (flag: Int64, i: number) => flag.shr(i * 7),
     (flag: Int64, i: number) => flag.shr(i * 9)
-  ]
-  export function checkBishopMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
-     return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, bishopEdges, bishopDirections)
-  }
+]
+export function checkBishopMoves(board: ChessBoard, flag: Int64, oppositeColorPieces: Int64, piecesForColor: Int64) {
+    return checkRangeMoves(board, flag, oppositeColorPieces, piecesForColor, bishopEdges, bishopDirections)
+}
 
-  export function checkKnightMoves(board: ChessBoard, flag: Int64, color: Color) {
+export function checkKnightMoves(board: ChessBoard, flag: Int64, color: Color) {
     if (flag.isZero()) return ZERO
     const index = flag.log2()
     const moves = knightMoves[index]
     const stepOvers = board.getPiecesForColor(color)
     const validMoves = moves.and(stepOvers.not())
     return validMoves
-  }
-  
+}
 
-  export function checkPawnMoves(board: ChessBoard, flag: Int64, color: Color) {
+
+export function checkPawnMoves(board: ChessBoard, flag: Int64, color: Color) {
     let validMoves = ZERO;
     const index = flag.log2();
     const x = index % 8;
-    
+
     if (color === 'white') {
         validMoves = validMoves.or(getPawnForwardMoves(board, flag, WHITE_PAWN_START, true));
         validMoves = validMoves.or(getPawnCaptureMoves(board, flag, x, 'black', true));
@@ -216,7 +216,7 @@ export function checkQueenMoves(board: ChessBoard, flag: Int64, oppositeColorPie
     }
 
     validMoves = validMoves.or(checkEnPassant(flag, board, color))
-    
+
     return validMoves;
 }
 
@@ -260,43 +260,153 @@ function getPawnCaptureMoves(board: ChessBoard, flag: Int64, x: number, opponent
     return captures.and(opponentPieces);
 }
 
-  export interface CandidateMove {
+export interface CandidateMove {
     from: number,
     to: number,
     isCapture: boolean,
     promoteTo: Piece | null
-  }
+}
 
-  const promoteTargets: Piece[] = ['N', 'B', 'R', 'Q']
-  export function getAllLegalMoves(board: ChessBoard, color: Color): CandidateMove[] {
-      const pieces = board.getPiecesForColor(color)
-      const oppositePieces = board.getPiecesForColor(board.flipColor(color))
-      const moves = []
-      for(let i = 0; i < 64; i++) {
-            const flag = board.getFlag(i)
-            if (!board.hasPiece(pieces, flag)) continue;
-            const piece = board.getPiece(flag)
-            if (piece == null) continue;
-            const toIndexes = board.getMoveIndexes(i, pieces, oppositePieces)
-            for(const toIndex of toIndexes) {
-                const toFlag = board.getFlag(toIndex)
-                const isCapture = board.hasPiece(oppositePieces, toFlag)
-                const isPromotion = board.isPromotion(toFlag, color, piece)
-                if (isPromotion) {
-                    for(const promoteTarget of promoteTargets) {
-                        moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: promoteTarget as Piece })
-                    }
-                } else {
-                    moves.push({ from: i, to: toIndex, isCapture: isCapture, promoteTo: null })
-                }
-            }
-      }
-      return moves.toSorted((a, b) =>  {
+const promoteTargets: Piece[] = ['N', 'B', 'R', 'Q']
+export function getAllLegalMoves(board: ChessBoard, color: Color): CandidateMove[] {
+    const pieces = board.getPiecesForColor(color)
+    const opponentPieces = board.getPiecesForColor(board.flipColor(color))
+    const moves = []
+    for (let i = 0; i < 64; i++) {
+        const movesForIndex = getLegalMovesAtIndex(board, i, pieces, opponentPieces)
+        moves.push(...movesForIndex)
+    }
+    return moves.toSorted((a, b) => {
         if (a.isCapture && !b.isCapture) {
-          return -1
+            return -1
         } else if (!a.isCapture && b.isCapture) {
-          return 1
+            return 1
         }
         return 0
-      })
+    })
+}
+
+export function getLegalMoveIndicesAtIndex(board: ChessBoard, from: number): number[] {
+    const color = board._data._turn
+    const pieces = board.getPiecesForColor(color)
+    const opponentPieces = board.getPiecesForColor(board.flipColor(color))
+    const legalMoves = getLegalMovesAtIndex(board, from, pieces, opponentPieces)
+    return legalMoves.map(move => move.to);
+}
+
+export function getLegalMovesAtIndex(board: ChessBoard, from: number, pieces: Int64, opponentPieces: Int64): CandidateMove[] {
+
+    const flag = board.getFlag(from)
+    if (!board.hasPiece(pieces, flag)) return [];
+    const piece = board.getPiece(flag)
+    if (piece == null) return [];
+
+    let moves: CandidateMove[] = []
+    const toIndexes = getMoveIndexes(board, from, pieces, opponentPieces)
+    const color = board._data._turn
+    for (const toIndex of toIndexes) {
+        const toFlag = board.getFlag(toIndex)
+        const isCapture = board.hasPiece(opponentPieces, toFlag)
+        const isPromotion = board.isPromotion(toFlag, color, piece)
+        if (isPromotion) {
+            for (const promoteTarget of promoteTargets) {
+                moves.push({ from: from, to: toIndex, isCapture: isCapture, promoteTo: promoteTarget as Piece })
+            }
+        } else {
+            moves.push({ from: from, to: toIndex, isCapture: isCapture, promoteTo: null })
+        }
     }
+    return moves;
+}
+
+export function getMoveIndexes(board: ChessBoard, fromIndex: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
+    const moves = checkMoves(board, fromIndex, sameColorPieces, oppositeColorPieces)
+    const indexes = []
+    for (let i = 0; i < 64; i++) {
+        const toFlag = board.getFlag(i)
+        if (board.hasPiece(moves, toFlag)) {
+            indexes.push(i)
+        }
+    }
+    return indexes
+}
+
+export function getCheckingMoves(board: ChessBoard, king: Int64, color: Color, sameColorPieces: Int64, oppositeColorPieces: Int64): Record<Piece, Int64> {
+    const bishopMoves = checkBishopMoves(board, king, oppositeColorPieces, sameColorPieces)
+    const rookMoves = checkRookMoves(board, king, oppositeColorPieces, sameColorPieces)
+    const kingMoves = checkKingMoves(board, king, color)
+    const pawnMoves = board.checkPawnCapturesForCheck(king, color)
+    return {
+        'P': pawnMoves,
+        'N': checkKnightMoves(board, king, color),
+        'B': bishopMoves,
+        'R': rookMoves,
+        'Q': bishopMoves.or(rookMoves),
+        'K': kingMoves
+    }
+}
+
+export function testMoveForCheck(
+    board: ChessBoard,
+    index: number,
+    toIndex: number,
+    color: Color,
+    oppositeColor: Color,
+    currentMove: Int64) {
+    const moveResult = board.applyMove(index, toIndex)
+    const sameColorPieces = board.getPiecesForColor(color)
+    const oppositeColorPieces = board.getPiecesForColor(board.flipColor(color))
+    const king = board._data._bitboards[color]['K']
+    const checkingMoves = getCheckingMoves(board, king, color, sameColorPieces, oppositeColorPieces)
+
+    const oppositePieces = board._data._bitboards[oppositeColor]
+    const isCheck = board.hasPiece(checkingMoves['P'], oppositePieces['P'])
+        || board.hasPiece(checkingMoves['N'], oppositePieces['N'])
+        || board.hasPiece(checkingMoves['B'], oppositePieces['B'])
+        || board.hasPiece(checkingMoves['R'], oppositePieces['R'])
+        || board.hasPiece(checkingMoves['Q'], oppositePieces['Q'])
+        || board.hasPiece(checkingMoves['K'], oppositePieces['K'])
+
+    board.undoMove(moveResult)
+
+    if (!isCheck) return currentMove
+    return ZERO
+}
+
+export function checkMovesForCheck(board: ChessBoard, moves: Int64, color: Color, fromIndex: number) {
+    if (moves.isZero()) return moves
+
+    const oppositeColor = board.flipColor(color)
+    let legalMoves = new Int64(0, 0)
+    for (let moveIndex = 0; moveIndex < 64; moveIndex++) {
+        const currentMove = board.getFlag(moveIndex)
+        if (!board.hasPiece(moves, currentMove)) continue;
+        legalMoves.mutate_or(testMoveForCheck(
+            board,
+            fromIndex,
+            moveIndex,
+            color,
+            oppositeColor,
+            currentMove,
+        ))
+    }
+    return legalMoves
+}
+
+ export function checkMoves(board: ChessBoard, fromIndex: number, sameColorPieces: Int64, oppositeColorPieces: Int64) {
+    const flag = board.getFlag(fromIndex)
+    const color = board._data._turn
+    const piece = board.getPiece(flag)
+    let moves = ZERO
+    switch (piece) {
+      case 'P': moves = checkPawnMoves(board, flag, color); break;
+      case 'N': moves = checkKnightMoves(board, flag, color); break;
+      case 'B': moves = checkBishopMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'R': moves = checkRookMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'Q': moves = checkQueenMoves(board, flag, oppositeColorPieces, sameColorPieces); break;
+      case 'K': moves = checkKingMoves(board, flag, color); break;
+    }
+    if (moves.isZero()) return moves;
+    moves = checkMovesForCheck(board, moves, color, fromIndex)
+    return moves
+  }
