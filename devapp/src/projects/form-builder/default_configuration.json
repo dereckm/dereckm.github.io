@@ -1,0 +1,37 @@
+{
+    "steps": [
+        {
+            "id": "greeting",
+            "content": [
+                {
+                    "id": "greeting_message",
+                    "type": "html",
+                    "tag": "p",
+                    "content": "hello there",
+                    "props": {
+                        "style": {
+                            "color": "red"
+                        }
+                    }
+                }
+            ],
+            "nextStep": "capture_email"
+        }, {
+            "id": "capture_email",
+            "content": [
+                {
+                    "id": "instructions",
+                    "type": "html",
+                    "tag": "p",
+                    "content": "Please capture your email below:",
+                    "props:": {
+                        "style": {
+                            "color": "red"
+                        }
+                    }
+                }
+            ],
+            "nextStep": null
+        }
+    ]
+}

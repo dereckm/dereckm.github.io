@@ -1,0 +1,5 @@
+.configuration-input-container {
+    color: #FFF;
+    display: flex;
+    flex-direction: column;
+}

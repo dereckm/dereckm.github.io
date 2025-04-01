@@ -28,7 +28,7 @@ type GameState = {
 }
 
 export const Board = () => {
-  const [board, setBoard] = useState<ChessBoard>(new ChessBoard('8/8/8/KN6/8/8/1q6/1k6 b - 0 14'))
+  const [board, setBoard] = useState<ChessBoard>(new ChessBoard(DEFAULT_BOARD))
   const [playerColor, setPlayerColor] = useState<Color>('white')
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [history, setHistory] = useState<string[]>([])
@@ -98,6 +98,8 @@ export const Board = () => {
             setBoard(clone.clone())
           }, 0)
         }
+      } else {
+        setSelectedIndex(targetIndex)
       }
     }
   }
