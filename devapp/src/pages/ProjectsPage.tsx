@@ -29,7 +29,7 @@ const FormBuilderProject = () => {
             <h2>Form builder</h2>
             <p>Tool to allow building form with strictly json. <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/form-builder">Source code available here.</a></p>
             <FormBuilder />
-            <p>Key concentps: State machine, schema-driven</p>
+            <p>Key concepts: State machine, schema-driven</p>
         </div >
     )
 }
