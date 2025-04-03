@@ -1,0 +1,21 @@
+.form-container {
+    padding: 32px;
+    background-color: #F5F5F5;
+    border-radius: 8px;
+    margin: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+}
+
+.form-control {
+    color: #FFF;
+    background-color: #1B1F3B;
+    border-radius: 8px;
+    padding: 8px;
+    height: fit-content;
+    &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+}

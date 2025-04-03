@@ -2,7 +2,7 @@
     "steps": [
         {
             "id": "greeting",
-            "content": [
+            "contents": [
                 {
                     "id": "greeting_message",
                     "type": "html",
@@ -10,24 +10,69 @@
                     "content": "hello there",
                     "props": {
                         "style": {
-                            "color": "red"
+                            "color": "#1B1F3B"
                         }
                     }
                 }
             ],
             "nextStep": "capture_email"
-        }, {
+        },
+        {
             "id": "capture_email",
-            "content": [
+            "contents": [
                 {
                     "id": "instructions",
                     "type": "html",
                     "tag": "p",
                     "content": "Please capture your email below:",
-                    "props:": {
+                    "props": {
                         "style": {
-                            "color": "red"
+                            "color": "#1B1F3B"
                         }
+                    }
+                },
+                {
+                    "id": "email_input",
+                    "type": "html_input",
+                    "tag": "input",
+                    "content": null,
+                    "props": {
+                        "type": "text"
+                    },
+                    "validation": {
+                        "type": "regex",
+                        "regex": "\\w+\\@\\w+\\.\\w+"
+                    },
+                    "isRequired": true
+                }
+            ],
+            "nextStep": "capture_username"
+        },
+        {
+            "id": "capture_username",
+            "contents": [
+                {
+                    "id": "instructions",
+                    "type": "html",
+                    "tag": "p",
+                    "content": "Please enter your username below:",
+                    "props": {
+                        "style": {
+                            "color": "#1B1F3B"
+                        }
+                    }
+                },
+                {
+                    "id": "username_input",
+                    "type": "html_input",
+                    "tag": "input",
+                    "content": null,
+                    "props": {
+                        "type": "text"
+                    },
+                    "validation": {
+                        "type": "regex",
+                        "regex": ".*"
                     }
                 }
             ],
