@@ -1,82 +1,113 @@
 {
-    "steps": [
+  "steps": [
+    {
+      "id": "contact_info",
+      "contents": [
         {
-            "id": "greeting",
-            "contents": [
-                {
-                    "id": "greeting_message",
-                    "type": "html",
-                    "tag": "p",
-                    "content": "hello there",
-                    "props": {
-                        "style": {
-                            "color": "#1B1F3B"
-                        }
-                    }
-                }
-            ],
-            "nextStep": "capture_email"
+          "id": "instructions_1",
+          "type": "html",
+          "tag": "p",
+          "content": "Step 1 of 3: Provide your contact details so I can get back to you.",
+          "props": {}
         },
         {
-            "id": "capture_email",
-            "contents": [
-                {
-                    "id": "instructions",
-                    "type": "html",
-                    "tag": "p",
-                    "content": "Please capture your email below:",
-                    "props": {
-                        "style": {
-                            "color": "#1B1F3B"
-                        }
-                    }
-                },
-                {
-                    "id": "email_input",
-                    "type": "html_input",
-                    "tag": "input",
-                    "content": null,
-                    "props": {
-                        "type": "text"
-                    },
-                    "validation": {
-                        "type": "regex",
-                        "regex": "\\w+\\@\\w+\\.\\w+"
-                    },
-                    "isRequired": true
-                }
-            ],
-            "nextStep": "capture_username"
+          "id": "full_name",
+          "type": "html_input",
+          "tag": "input",
+          "content": null,
+          "props": {
+            "type": "text",
+            "placeholder": "Full Name (e.g. Jane Doe)"
+          },
+          "isRequired": true
         },
         {
-            "id": "capture_username",
-            "contents": [
-                {
-                    "id": "instructions",
-                    "type": "html",
-                    "tag": "p",
-                    "content": "Please enter your username below:",
-                    "props": {
-                        "style": {
-                            "color": "#1B1F3B"
-                        }
-                    }
-                },
-                {
-                    "id": "username_input",
-                    "type": "html_input",
-                    "tag": "input",
-                    "content": null,
-                    "props": {
-                        "type": "text"
-                    },
-                    "validation": {
-                        "type": "regex",
-                        "regex": ".*"
-                    }
-                }
-            ],
-            "nextStep": null
+          "id": "email_address",
+          "type": "html_input",
+          "tag": "input",
+          "content": null,
+          "props": {
+            "type": "text",
+            "placeholder": "Email Address (e.g. jane@example.com)"
+          },
+          "validation": {
+            "type": "regex",
+            "regex": "^[^@\\\\s]+@[^@\\\\s]+\\\\.[^@\\\\s]+$"
+          },
+          "isRequired": true
         }
-    ]
+      ],
+      "nextStep": "project_details"
+    },
+    {
+      "id": "project_details",
+      "contents": [
+        {
+          "id": "instructions_2",
+          "type": "html",
+          "tag": "p",
+          "content": "Step 2 of 3: Describe your project requirements and objectives.",
+          "props": {}
+        },
+        {
+          "id": "project_title",
+          "type": "html_input",
+          "tag": "input",
+          "content": null,
+          "props": {
+            "type": "text",
+            "placeholder": "Project Title (e.g. Mobile E-Commerce App)"
+          },
+          "isRequired": true
+        },
+        {
+          "id": "project_description",
+          "type": "html_input",
+          "tag": "textarea",
+          "content": null,
+          "props": {
+            "placeholder": "Describe what you would like to build, key features, and target platform...",
+            "rows": 4
+          },
+          "isRequired": true
+        }
+      ],
+      "nextStep": "budget_timeline"
+    },
+    {
+      "id": "budget_timeline",
+      "contents": [
+        {
+          "id": "instructions_3",
+          "type": "html",
+          "tag": "p",
+          "content": "Step 3 of 3: Specify your estimated budget and estimated timeline.",
+          "props": {}
+        },
+        {
+          "id": "estimated_budget",
+          "type": "html_input",
+          "tag": "input",
+          "content": null,
+          "props": {
+            "type": "text",
+            "placeholder": "Estimated Budget (e.g. $5k - $10k)"
+          },
+          "isRequired": true
+        },
+        {
+          "id": "target_timeline",
+          "type": "html_input",
+          "tag": "input",
+          "content": null,
+          "props": {
+            "type": "text",
+            "placeholder": "Target Launch (e.g. 2-3 months)"
+          },
+          "isRequired": true
+        }
+      ],
+      "nextStep": null
+    }
+  ]
 }

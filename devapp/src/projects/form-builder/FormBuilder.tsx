@@ -13,7 +13,7 @@ const FormBuilder = () => {
                 <ConfigurationInput configuration={JSON.stringify(configuration, null, 2)} onConfigurationChanged={setConfiguration} />
             </div>
             <div className={styles['preview-panel']}>
-                <Form data={configuration}></Form>
+                <Form key={JSON.stringify(configuration)} data={configuration}></Form>
             </div>
         </div>
     )

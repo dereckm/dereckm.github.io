@@ -7,58 +7,78 @@ export type FormContentProps = {
     setData: (entries: Record<string, any>) => void
     setState: (state: Partial<StepState>) => void
 }
+
 const FormContent = (props: FormContentProps) => {
-    const { data, setData, setState } = props
+    const { data, setData } = props
 
     if (data.type === 'html') {
         const htmlContent = data as SimpleHtmlFormContent
-
         return React.createElement(htmlContent.tag, htmlContent.props, htmlContent.content)
     } else if (data.type === 'html_input') {
         const htmlInputContent = data as HtmlInputFormContent
-        return React.createElement(htmlInputContent.tag, 
-            WithDataCapture(
-                WithValidation(htmlInputContent.props, htmlInputContent.validation, setState), 
-                htmlInputContent.id, 
-                setData)
-            , null)
+        
+        let inputProps = { ...htmlInputContent.props }
+        inputProps = WithValidation(inputProps, htmlInputContent.validation)
+        inputProps = WithDataCapture(inputProps, htmlInputContent.id, setData, htmlInputContent.validation)
+        
+        return React.createElement(htmlInputContent.tag, inputProps, null)
     }
-
 
     return <></>
 }
 
-function WithDataCapture(props: React.DetailsHTMLAttributes<HTMLInputElement>, key: string, setData: (entries: Record<string, any>) => void) {
+function WithDataCapture(
+    props: React.DetailsHTMLAttributes<HTMLInputElement>, 
+    key: string, 
+    setData: (entries: Record<string, any>) => void,
+    validation: ValidationSchema | undefined) {
+    
+    const originalOnChange = props.onChange
+    
     props.onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const str = e.currentTarget.value
         setData({ [key]: str })
+        
+        if (validation && validation.type === 'regex') {
+            try {
+                const regexVal = validation as RegexValidationSchema
+                const regex = new RegExp(regexVal.regex)
+                if (regex.test(str)) {
+                    e.currentTarget.classList.remove('input-error')
+                }
+            } catch (err) {}
+        } else {
+            e.currentTarget.classList.remove('input-error')
+        }
+        
+        if (originalOnChange) {
+            originalOnChange(e)
+        }
     }
     return props
 }
 
 function WithValidation(
     props: React.DetailsHTMLAttributes<HTMLInputElement>,
-    validation: ValidationSchema,
-    setState: (state: Partial<StepState>) => void) {
+    validation: ValidationSchema | undefined) {
 
-    const decoratedProps = props;
-    if (validation.type === 'regex') {
+    const decoratedProps = props
+    if (validation && validation.type === 'regex') {
         const regexValidation = validation as RegexValidationSchema
         decoratedProps.onBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
             const str = e.currentTarget.value
-            const match = str.match(regexValidation.regex)
-
-            if (match === null) {
-                e.currentTarget.classList.add('input-error')
-                setState({ canGoNext: false })
-            } else {
-                e.currentTarget.classList.remove('input-error')
-                setState({ canGoNext: true })
-            }
+            try {
+                const regex = new RegExp(regexValidation.regex)
+                if (!regex.test(str)) {
+                    e.currentTarget.classList.add('input-error')
+                } else {
+                    e.currentTarget.classList.remove('input-error')
+                }
+            } catch (err) {}
         }
     }
 
-    return decoratedProps;
+    return decoratedProps
 }
 
-export default FormContent
+export default FormContent
