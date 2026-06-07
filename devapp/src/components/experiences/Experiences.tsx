@@ -53,16 +53,12 @@ const experiences: ExperienceProps[] = [{
 
 const Experiences = () => {
     return (
-        <>
+        <div className={styles['experiences-container']}>
             <h2>Experiences</h2>
-            <div className={styles['experiences-container']}>
-                <div className={styles['experiences-content']}>
-                    <div className={styles['timeline-container']}>
-                        {experiences.map(exp => <Experience key={exp.title} title={exp.title} employer={exp.employer} date={exp.date} tasks={exp.tasks} />)}
-                    </div>
-                </div> 
+            <div className={styles['timeline-container']}>
+                {experiences.map(exp => <Experience key={exp.title} title={exp.title} employer={exp.employer} date={exp.date} tasks={exp.tasks} />)}
             </div>
-        </>
+        </div>
     )
 }
 
@@ -76,16 +72,20 @@ type ExperienceProps = {
 const Experience = ({ title, employer, date, tasks }: ExperienceProps) => {
     return (
         <div className={styles['timeline-element-container']}>
-            <div className={styles['timeline-branch']}><p>{date}</p></div>
-            <div>
-                <h3 className={styles['experience-title']}>{title}</h3>
-                <sub>{employer}</sub>
-                <ul>
-                    {tasks.map((task, i) => <li key={i}>{task}</li>)}
+            <div className={styles['timeline-dot']}></div>
+            <div className={styles['timeline-card']}>
+                <div className={styles['card-header']}>
+                    <div className={styles['employer-info']}>
+                        <h3 className={styles['experience-title']}>{title}</h3>
+                        <span className={styles['experience-employer']}>{employer}</span>
+                    </div>
+                    <span className={styles['experience-date']}>{date}</span>
+                </div>
+                <ul className={styles['tasks-list']}>
+                    {tasks.map((task, i) => <li key={i} className={styles['task-item']}>{task}</li>)}
                 </ul>
             </div>
         </div>
-        
     )
 }
 

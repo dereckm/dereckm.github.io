@@ -8,10 +8,14 @@ const FormBuilder = () => {
     const [configuration, setConfiguration] = useState<FormSchema>(defaultConfiguration)
 
     return (
-        <>
-            <ConfigurationInput configuration={JSON.stringify(configuration)} onConfigurationChanged={setConfiguration} />
-            <Form data={configuration}></Form>
-        </>
+        <div className={styles['form-builder-dashboard']}>
+            <div className={styles['editor-panel']}>
+                <ConfigurationInput configuration={JSON.stringify(configuration, null, 2)} onConfigurationChanged={setConfiguration} />
+            </div>
+            <div className={styles['preview-panel']}>
+                <Form data={configuration}></Form>
+            </div>
+        </div>
     )
 }
 

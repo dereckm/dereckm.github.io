@@ -14,6 +14,8 @@ function App() {
   return (
     
     <div className={styles['App']}>
+      <div className={styles['glow-blob-1']}></div>
+      <div className={styles['glow-blob-2']}></div>
       <Menu selectedMenuItem={selectedMenuItem} setSelectedMenuItem={setSelectedMenuItem} />
       <div className={styles['pages-container']}>
         <AboutPage />

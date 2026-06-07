@@ -1,37 +1,60 @@
 import { Board } from "../projects/chess/BoardView"
 import FormBuilder from "../projects/form-builder/FormBuilder"
+import styles from "./ProjectsPage.module.css"
+import { IconBrandGithub } from "@tabler/icons-react"
 
 const ProjectsPage = () => {
     return (
-        <>
+        <div className={styles['projects-container']}>
             <h1 id='projects'>Projects</h1>
-            <ChessProject />
-            <FormBuilderProject />
-        </>
+            
+            <div className={styles['project-card']}>
+                <div className={styles['project-header']}>
+                    <div className={styles['project-title-area']}>
+                        <h2>Chess Engine</h2>
+                        <p className={styles['project-description']}>
+                            An interactive chess board and custom chess engine running directly in the browser. Powered by optimized search heuristics and move evaluation.
+                        </p>
+                        <div className={styles['tech-tags']}>
+                            {['Bitboards', 'Minimax', 'Quiescence Search', 'Iterative Deepening', 'Heuristic Scoring'].map(tag => (
+                                <span key={tag} className={styles['tech-tag']}>{tag}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/chess" target="_blank" rel="noreferrer" className={styles['github-link']}>
+                        <IconBrandGithub size={18} />
+                        <span>Source Code</span>
+                    </a>
+                </div>
+                <div className={styles['demo-container']}>
+                    <Board />
+                </div>
+            </div>
 
-    )
-}
-
-const ChessProject = () => {
-    return (
-        <div>
-            <h2>Chess engine</h2>
-            <p>Chess board and chess engine. <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/chess">Source code available here.</a></p>
-            <Board />
-            <p>Key concepts: Bitboards, Minimax, Quiescence search, Iterative Deepening, Optimization, Scoring heuristics, Parsing,</p>
+            <div className={styles['project-card']}>
+                <div className={styles['project-header']}>
+                    <div className={styles['project-title-area']}>
+                        <h2>Form Builder</h2>
+                        <p className={styles['project-description']}>
+                            A schema-driven dynamic form generator that allows building fully validated multi-step workflows using structured JSON configurations.
+                        </p>
+                        <div className={styles['tech-tags']}>
+                            {['State Machine', 'JSON Schema', 'Dynamic Rendering', 'Regex Validation'].map(tag => (
+                                <span key={tag} className={styles['tech-tag']}>{tag}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/form-builder" target="_blank" rel="noreferrer" className={styles['github-link']}>
+                        <IconBrandGithub size={18} />
+                        <span>Source Code</span>
+                    </a>
+                </div>
+                <div className={styles['demo-container']}>
+                    <FormBuilder />
+                </div>
+            </div>
         </div>
     )
 }
 
-const FormBuilderProject = () => {
-    return (
-        <div>
-            <h2>Form builder</h2>
-            <p>Tool to allow building form with strictly json. <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/form-builder">Source code available here.</a></p>
-            <FormBuilder />
-            <p>Key concepts: State machine, schema-driven</p>
-        </div >
-    )
-}
-
-export default ProjectsPage
+export default ProjectsPage

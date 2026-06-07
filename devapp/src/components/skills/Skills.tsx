@@ -1,44 +1,72 @@
 import styles from './Skills.module.css'
+import { IconCode, IconLayersIntersect, IconCloud, IconTerminal2, IconBrain } from '@tabler/icons-react'
 
 const Skills = () => {
+    const categories = [
+        {
+            title: 'Programming Languages',
+            icon: <IconCode size={20} />,
+            skills: ['C#', 'Javascript / Typescript', 'Python', 'HTML', 'CSS', 'SQL']
+        },
+        {
+            title: 'Frameworks & Libraries',
+            icon: <IconLayersIntersect size={20} />,
+            skills: ['.NET / .NET Core', 'Entity Framework (EF)', 'React', 'Next.js']
+        },
+        {
+            title: 'Cloud & Database',
+            icon: <IconCloud size={20} />,
+            skills: [
+                'AWS (EC2, ECS, S3, DynamoDB, Aurora, IAM)',
+                'GCP (Machine Translation, reCaptcha Enterprise)',
+                'Redis / ElastiCache',
+                'MySQL / PostgreSQL'
+            ]
+        },
+        {
+            title: 'Software Tools & CI/CD',
+            icon: <IconTerminal2 size={20} />,
+            skills: ['Git / GitHub / GitLab', 'Jenkins', 'Octopus Deploy', 'Rider', 'Visual Studio', 'dotPeek', 'dotTrace', 'dotMemory']
+        },
+        {
+            title: 'Concepts & Architectures',
+            icon: <IconBrain size={20} />,
+            skills: [
+                'Agile / Scrum / Kanban',
+                'Microservices',
+                'Domain-Centric Architecture',
+                'Event-Driven Architecture',
+                'REST APIs',
+                'SRE / DevOps',
+                'CI/CD',
+                'SOLID / Design Patterns',
+                'TDD / Unit & Integration Testing'
+            ]
+        }
+    ]
+
     return (
-        <>
+        <div className={styles['skills-container']}>
             <h2>Software expertise</h2>
-            <div className={styles['skills-content']}>
-                <SkillSection title='Programming languages'>
-                    <p>C#, Javascript / Typescript, Python, HTML, CSS, SQL </p>
-                </SkillSection>
-                <SkillSection title='Frameworks'>
-                    <p>.NET, .NET Core, .NET Framework, Entity Framework (EF), ReactJS, NextJs</p>
-                </SkillSection>
-                <SkillSection title='Cloud programming'>
-                    <>
-                        <p>AWS: S3, DynamoDB, IAM, Aurora MySQL/PGSQL, Parameter Store, Elasticache / Redis, EC2, ECS</p>
-                        <p>Google Cloud: Machine translations, reCaptcha Enterprise</p>
-                    </>
-                </SkillSection>
-                <SkillSection title='Software tools'>
-                    <p>Visual studio (VS), Visual studio code, Rider, Git, Github, Gitlab, Octopus, Jenkins, dotPeek, dotTrace, dotCover, dotMemory</p>
-                </SkillSection>
-                <SkillSection title='Concepts'>
-                    <p>Agile methodology, Kanban, Scrum, DevOps, REST API, site-reliability engineering (SRE), software security, microservices architecture, domain-centric architecture, event-driven architecture, GRASP, SOLID, software design patterns, test-driven development (TDD), object-oriented programming (OOP), Continus integration and Continuous Deployment (CI/CD), Unit testing, Integration testing</p>
-                </SkillSection>
-            </div>   
-        </>
+            <div className={styles['skills-grid']}>
+                {categories.map((cat, idx) => (
+                    <div key={idx} className={styles['skill-card']}>
+                        <div className={styles['card-header']}>
+                            <span className={styles['card-icon']}>{cat.icon}</span>
+                            <h3>{cat.title}</h3>
+                        </div>
+                        <div className={styles['skills-list']}>
+                            {cat.skills.map((skill, sIdx) => (
+                                <span key={sIdx} className={styles['skill-pill']}>
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     )
 }
 
-type SkillSectionProps = {
-    title: string,
-    children: JSX.Element
-}
-const SkillSection = ({ title, children }: SkillSectionProps) => {
-    return (
-    <div>
-        <h3>{title}</h3>
-        {children}
-    </div>
-    )
-}
-
-export default Skills
+export default Skills

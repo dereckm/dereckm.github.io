@@ -19,14 +19,15 @@ export function tryFindBoardCorruptionIssues() {
 
 function playTurn(board: ChessBoard, color: Color) {
     const scoredMove = engine.findDeepeningOptimalMove(board, color)
-    if (scoredMove.move == null) throw new Error('Move should not be null');
+    const move = scoredMove.move;
+    if (move == null) throw new Error('Move should not be null');
     let beforeState = board.save()
-    const whiteMoveResult = board.applyMove(scoredMove.move.from, scoredMove.move.to)
-    board.undoMove(whiteMoveResult)
-    console.log(`State: ${beforeState}, Move: ${INDEX_TO_SQUARE[scoredMove.move.from]}->${INDEX_TO_SQUARE[scoredMove.move.to]}`)
+    move.apply(board)
+    move.undo()
+    console.log(`State: ${beforeState}, Move: ${INDEX_TO_SQUARE[move.from]}->${INDEX_TO_SQUARE[move.to]}`)
     let afterState = board.save()
     if (beforeState !== afterState) {
         console.log(`Corrupted state!!!`)
     }
-    board.applyMove(scoredMove.move.from, scoredMove.move.to)
+    move.apply(board)
 }
