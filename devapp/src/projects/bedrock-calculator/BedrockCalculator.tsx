@@ -23,10 +23,25 @@ interface ModelConfig {
 }
 
 const PREDEFINED_MODELS: Record<string, ModelConfig> = {
+    'claude-4-6-sonnet': {
+        name: 'Anthropic Claude 4.6 Sonnet (us.anthropic.claude-sonnet-4-6)',
+        inputCost: 3.00,
+        outputCost: 15.00
+    },
+    'claude-3-7-sonnet': {
+        name: 'Anthropic Claude 3.7 Sonnet',
+        inputCost: 3.00,
+        outputCost: 15.00
+    },
     'claude-3-5-sonnet': {
         name: 'Anthropic Claude 3.5 Sonnet (v2)',
         inputCost: 3.00,
         outputCost: 15.00
+    },
+    'claude-4-5-haiku': {
+        name: 'Anthropic Claude 4.5 Haiku',
+        inputCost: 1.00,
+        outputCost: 5.00
     },
     'claude-3-5-haiku': {
         name: 'Anthropic Claude 3.5 Haiku',
@@ -93,7 +108,7 @@ export default function BedrockCalculator() {
     const [unitType, setUnitType] = useState<'tokens' | 'chars'>('tokens');
 
     // Input States
-    const [selectedModel, setSelectedModel] = useState<string>('claude-3-5-sonnet');
+    const [selectedModel, setSelectedModel] = useState<string>('claude-4-6-sonnet');
     const [customInputCost, setCustomInputCost] = useState<number>(3.00);
     const [customOutputCost, setCustomOutputCost] = useState<number>(15.00);
 
