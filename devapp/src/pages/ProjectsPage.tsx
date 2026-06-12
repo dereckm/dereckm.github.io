@@ -1,5 +1,6 @@
 import { Board } from "../projects/chess/BoardView"
 import FormBuilder from "../projects/form-builder/FormBuilder"
+import BedrockCalculator from "../projects/bedrock-calculator/BedrockCalculator"
 import styles from "./ProjectsPage.module.css"
 import { IconBrandGithub } from "@tabler/icons-react"
 
@@ -51,6 +52,29 @@ const ProjectsPage = () => {
                 </div>
                 <div className={styles['demo-container']}>
                     <FormBuilder />
+                </div>
+            </div>
+
+            <div className={styles['project-card']}>
+                <div className={styles['project-header']}>
+                    <div className={styles['project-title-area']}>
+                        <h2>AWS Bedrock Calculator</h2>
+                        <p className={styles['project-description']}>
+                            An interactive cost estimation dashboard for AWS Bedrock Agents and RAG. Simulates multi-turn conversation token compounding and ReAct orchestration steps.
+                        </p>
+                        <div className={styles['tech-tags']}>
+                            {['AWS Bedrock', 'RAG & Agents', 'Cost Optimization', 'Interactive Analytics', 'SVG Visualization'].map(tag => (
+                                <span key={tag} className={styles['tech-tag']}>{tag}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <a href="https://github.com/dereckm/dereckm.github.io/tree/master/devapp/src/projects/bedrock-calculator" target="_blank" rel="noreferrer" className={styles['github-link']}>
+                        <IconBrandGithub size={18} />
+                        <span>Source Code</span>
+                    </a>
+                </div>
+                <div className={styles['demo-container']}>
+                    <BedrockCalculator />
                 </div>
             </div>
         </div>
